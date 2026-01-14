@@ -14,7 +14,14 @@
     <meta name="twitter:title" content="Shielded Sol">
     <meta name="twitter:description" content="Solana Privacy Pools">
     <meta name="twitter:image" content="https://shieldedsol.com/api/og">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ShieldedSol">
+    <meta name="theme-color" content="#9945FF">
+    <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23000' width='100' height='100' rx='20'/><text x='50' y='68' font-size='50' text-anchor='middle' fill='%239945FF'>S</text></svg>">
+    <link rel="apple-touch-icon" href="/icon-192.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -344,6 +351,11 @@
 
         render();
         fetchData();
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
     </script>
 </body>
 </html>
