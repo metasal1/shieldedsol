@@ -5,6 +5,8 @@ export const config = {
 export default async function handler(req) {
   // Fetch TVL from DeFiLlama
   let tvl = '$--';
+  let change = '';
+  let changeColor = '#666';
   let protocols = 6;
   try {
     const res = await fetch('https://api.llama.fi/protocol/privacy-cash');
@@ -16,6 +18,19 @@ export default async function handler(req) {
       tvl = '$' + (tvlVal / 1e3).toFixed(2) + 'K';
     } else if (tvlVal > 0) {
       tvl = '$' + tvlVal.toFixed(2);
+    }
+
+    // Calculate 24h change
+    const history = data?.chainTvls?.Solana?.tvl || data?.tvl || [];
+    if (history.length >= 2) {
+      const current = history[history.length - 1]?.totalLiquidityUSD || 0;
+      const yesterday = history[history.length - 2]?.totalLiquidityUSD || 0;
+      if (yesterday > 0) {
+        const pct = ((current - yesterday) / yesterday) * 100;
+        const arrow = pct >= 0 ? '↑' : '↓';
+        change = `${arrow} ${Math.abs(pct).toFixed(2)}% (24h)`;
+        changeColor = pct >= 0 ? '#22c55e' : '#ef4444';
+      }
     }
   } catch (e) {}
 
@@ -34,7 +49,8 @@ export default async function handler(req) {
       <text x="80" y="200" font-family="monospace" font-size="24" fill="#666">Solana Privacy Pools</text>
       <text x="80" y="320" font-family="monospace" font-size="18" fill="#666" text-transform="uppercase" letter-spacing="2">Total Value Locked</text>
       <text x="80" y="400" font-family="monospace" font-size="96" fill="#9945FF" font-weight="bold">${tvl}</text>
-      <text x="80" y="500" font-family="monospace" font-size="24" fill="#444">${protocols} protocols tracked</text>
+      <text x="80" y="450" font-family="monospace" font-size="24" fill="${changeColor}">${change}</text>
+      <text x="80" y="520" font-family="monospace" font-size="24" fill="#444">${protocols} protocols tracked</text>
       <text x="80" y="570" font-family="monospace" font-size="18" fill="#333">shieldedsol.com</text>
     </svg>
   `;
