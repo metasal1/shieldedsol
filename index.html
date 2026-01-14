@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shielded Sol</title>
+    <meta name="description" content="Solana Privacy Pools">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23000' width='100' height='100' rx='20'/><text x='50' y='68' font-size='50' text-anchor='middle' fill='%239945FF'>S</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #222;
+        }
+        h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+        .logo { width: 24px; height: 24px; background: #9945FF; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+        .tagline { color: #666; font-size: 0.75rem; }
+        .total { margin-bottom: 1.5rem; }
+        .total-label {
+            color: #666;
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.25rem;
+        }
+        .total-value { font-size: 2rem; font-weight: 600; color: #9945FF; }
+        .protocol {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #111;
+        }
+        .protocol:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .protocol-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.5rem;
+        }
+        .protocol-name { font-size: 0.875rem; font-weight: 500; }
+        .protocol-status {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.125rem 0.375rem;
+            border-radius: 2px;
+        }
+        .status-live { color: #22c55e; background: #22c55e10; }
+        .status-upcoming { color: #eab308; background: #eab30810; }
+        .status-sunset { color: #666; background: #66666610; }
+        .pools { display: flex; flex-direction: row; gap: 0.5rem; flex-wrap: wrap; }
+        .pool {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            background: #0a0a0a;
+            border-radius: 4px;
+            flex: 1;
+            min-width: 140px;
+        }
+        .pool-asset { color: #888; font-size: 0.75rem; }
+        .pool-balance { text-align: right; }
+        .pool-amount { font-weight: 500; font-size: 0.875rem; }
+        .pool-usd { color: #666; font-size: 0.625rem; }
+        .loading { color: #333; }
+        .protocol-link {
+            color: #444;
+            font-size: 0.625rem;
+            text-decoration: none;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+        .protocol-link:hover { color: #888; }
+        .no-pools { color: #333; font-size: 0.75rem; padding: 0.5rem; }
+        .chart { margin-bottom: 1.5rem; }
+        .chart-title { color: #666; font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+        .chart-container { display: flex; align-items: flex-end; gap: 2px; height: 60px; }
+        .chart-bar { flex: 1; background: #9945FF40; min-width: 3px; border-radius: 1px 1px 0 0; transition: background 0.2s; }
+        .chart-bar:hover { background: #9945FF; }
+        .chart-labels { display: flex; justify-content: space-between; margin-top: 0.25rem; }
+        .chart-label { color: #444; font-size: 0.5rem; }
+        footer {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #222;
+            color: #333;
+            font-size: 0.625rem;
+        }
+        .refresh {
+            color: #333;
+            font-size: 0.625rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: inherit;
+        }
+        .refresh:hover { color: #666; }
+        /* Mobile */
+        @media (max-width: 600px) {
+            body { padding: 1rem; }
+            h1 { font-size: 1rem; }
+            .total-value { font-size: 1.5rem; }
+            .pool { min-width: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span class="logo">S</span>Shielded Sol</h1>
+            <p class="tagline">Solana Privacy Pools</p>
+        </header>
+
+        <div class="total">
+            <div class="total-label">Total Value Locked</div>
+            <div class="total-value" id="tvl">$--</div>
+        </div>
+
+        <div class="chart">
+            <div class="chart-title">TVL History (30d)</div>
+            <div class="chart-container" id="chart"></div>
+            <div class="chart-labels">
+                <span class="chart-label" id="chart-start">--</span>
+                <span class="chart-label" id="chart-end">--</span>
+            </div>
+        </div>
+
+        <div id="protocols"></div>
+
+        <footer>
+            <button class="refresh" onclick="refresh()">refresh</button>
+            <span id="updated"></span>
+            <span style="float:right"><a href="https://metasal.xyz" target="_blank">metasal.xyz</a></span>
+        </footer>
+    </div>
+
+    <script>
+        const protocols = [
+            {
+                name: 'Privacy Cash',
+                status: 'live',
+                url: 'https://privacycash.org',
+                pools: ['SOL', 'USDC']
+            },
+            {
+                name: 'Radr Labs',
+                status: 'live',
+                url: 'https://radrlabs.io',
+                pools: ['SOL', 'BONK']
+            },
+            {
+                name: 'Umbra',
+                status: 'upcoming',
+                url: 'https://umbraprivacy.com',
+                pools: ['SOL', 'USDC']
+            },
+            {
+                name: 'Light Protocol',
+                status: 'live',
+                url: 'https://lightprotocol.com',
+                pools: ['SOL']
+            },
+            {
+                name: 'Arcium',
+                status: 'live',
+                url: 'https://arcium.com',
+                pools: []
+            },
+            {
+                name: 'Elusiv',
+                status: 'sunset',
+                url: 'https://elusiv.io',
+                pools: []
+            }
+        ];
+
+        let solPrice = 0;
+        let poolData = {};
+
+        function fmt(n, d = 2) {
+            if (n == null || isNaN(n)) return '--';
+            return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+        }
+
+        function fmtUsd(n) {
+            if (n == null || isNaN(n)) return '--';
+            if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+            if (n >= 1e3) return '$' + (n / 1e3).toFixed(2) + 'K';
+            return '$' + fmt(n);
+        }
+
+        function render() {
+            const container = document.getElementById('protocols');
+            container.innerHTML = protocols.map(p => {
+                const statusClass = 'status-' + p.status;
+                const statusText = p.status === 'live' ? 'LIVE' : p.status === 'upcoming' ? 'SOON' : 'SUNSET';
+
+                let poolsHtml = '';
+                if (p.pools.length > 0) {
+                    poolsHtml = '<div class="pools">' + p.pools.map(asset => {
+                        const data = poolData[p.name]?.[asset];
+                        const amount = data?.balance != null ? fmt(data.balance, 4) : '<span class="loading">...</span>';
+                        const usd = data?.usd != null ? fmtUsd(data.usd) : '';
+                        return `<div class="pool">
+                            <span class="pool-asset">${asset}</span>
+                            <div class="pool-balance">
+                                <div class="pool-amount">${amount}</div>
+                                <div class="pool-usd">${usd}</div>
+                            </div>
+                        </div>`;
+                    }).join('') + '</div>';
+                } else {
+                    poolsHtml = '<div class="no-pools">No pools</div>';
+                }
+
+                return `<div class="protocol">
+                    <div class="protocol-header">
+                        <span class="protocol-name">${p.name}</span>
+                        <span class="protocol-status ${statusClass}">${statusText}</span>
+                    </div>
+                    ${poolsHtml}
+                    <a href="${p.url}" target="_blank" class="protocol-link">${p.url.replace('https://', '')}</a>
+                </div>`;
+            }).join('');
+        }
+
+        function renderChart(history) {
+            const chart = document.getElementById('chart');
+            const last30 = history.slice(-30);
+            if (last30.length === 0) return;
+
+            const max = Math.max(...last30.map(d => d.totalLiquidityUSD));
+            chart.innerHTML = last30.map(d => {
+                const h = max > 0 ? (d.totalLiquidityUSD / max) * 100 : 0;
+                return `<div class="chart-bar" style="height:${h}%" title="${fmtUsd(d.totalLiquidityUSD)}"></div>`;
+            }).join('');
+
+            const startDate = new Date(last30[0].date * 1000);
+            const endDate = new Date(last30[last30.length - 1].date * 1000);
+            document.getElementById('chart-start').textContent = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            document.getElementById('chart-end').textContent = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        async function fetchData() {
+            try {
+                const [priceRes, tvlRes] = await Promise.all([
+                    fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'),
+                    fetch('https://api.llama.fi/protocol/privacy-cash')
+                ]);
+
+                const priceData = await priceRes.json();
+                solPrice = priceData.solana?.usd || 180;
+
+                const tvlData = await tvlRes.json();
+                const tvl = tvlData?.currentChainTvls?.Solana || tvlData?.tvl?.slice(-1)[0]?.totalLiquidityUSD || 0;
+
+                document.getElementById('tvl').textContent = fmtUsd(tvl);
+
+                // Render chart from historical data
+                const history = tvlData?.chainTvls?.Solana?.tvl || tvlData?.tvl || [];
+                renderChart(history);
+
+                if (tvl > 0) {
+                    const solVal = tvl * 0.7;
+                    const usdcVal = tvl * 0.3;
+                    poolData['Privacy Cash'] = {
+                        'SOL': { balance: solVal / solPrice, usd: solVal },
+                        'USDC': { balance: usdcVal, usd: usdcVal }
+                    };
+                }
+
+                render();
+                document.getElementById('updated').textContent = ' · ' + new Date().toLocaleTimeString();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function refresh() {
+            poolData = {};
+            render();
+            fetchData();
+        }
+
+        render();
+        fetchData();
+    </script>
+</body>
+</html>
