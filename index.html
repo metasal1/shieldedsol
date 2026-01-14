@@ -177,7 +177,9 @@
             <span id="updated"></span>
             <span style="float:right">
                 <button class="refresh" id="alert-btn" onclick="toggleAlerts()">alerts: off</button> ·
-                <button class="refresh" onclick="shareTwitter()">share</button> ·
+                <button class="refresh" onclick="shareTwitter()">X</button>
+                <button class="refresh" onclick="shareTelegram()">TG</button>
+                <button class="refresh" onclick="shareDiscord()">DC</button> ·
                 <button class="refresh" id="copy-btn" onclick="copyStats()">copy</button> ·
                 <a href="https://t.me/metasal" target="_blank">+ add protocol</a> ·
                 <a href="https://metasal.xyz" target="_blank">metasal.xyz</a>
@@ -392,14 +394,28 @@
             btn.style.color = alertsEnabled ? '#22c55e' : '#333';
         }
 
-        function shareTwitter() {
+        function getShareText() {
             const tvl = document.getElementById('tvl').textContent;
             const change = document.getElementById('tvl-change').textContent;
-            const text = `Solana Privacy Pools TVL: ${tvl} ${change}
+            return `Solana Privacy Pools TVL: ${tvl} ${change}\n\nTrack privacy protocols live on shieldedsol.com`;
+        }
 
-Track privacy protocols live on shieldedsol.com`;
-            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+        function shareTwitter() {
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}`;
             window.open(url, '_blank', 'width=550,height=420');
+        }
+
+        function shareTelegram() {
+            const url = `https://t.me/share/url?url=${encodeURIComponent('https://shieldedsol.com')}&text=${encodeURIComponent(getShareText())}`;
+            window.open(url, '_blank', 'width=550,height=420');
+        }
+
+        function shareDiscord() {
+            navigator.clipboard.writeText(getShareText() + '\nhttps://shieldedsol.com');
+            const btn = event.target;
+            btn.textContent = '✓';
+            btn.style.color = '#22c55e';
+            setTimeout(() => { btn.textContent = 'DC'; btn.style.color = ''; }, 1500);
         }
 
         async function copyStats() {
