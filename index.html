@@ -284,6 +284,7 @@
         let chartPeriod = 7;
         let alertsEnabled = localStorage.getItem('alerts') === 'true';
         let lastTvl = parseFloat(localStorage.getItem('lastTvl')) || 0;
+        let lastNotificationDate = localStorage.getItem('lastNotificationDate') || '';
         const ALERT_THRESHOLD = 10; // Alert on 10%+ change
         let lightMode = localStorage.getItem('theme') === 'light';
 
@@ -399,6 +400,7 @@
                     }
                 }
                 renderChart();
+                checkDailyNotification(tvl);
 
                 if (tvl > 0) {
                     const solVal = tvl * 0.7;
@@ -501,6 +503,23 @@
             }
             localStorage.setItem('lastTvl', currentTvl);
             lastTvl = currentTvl;
+        }
+
+        function checkDailyNotification(currentTvl) {
+            if (!alertsEnabled) return;
+            const today = new Date().toDateString();
+            if (lastNotificationDate === today) return;
+
+            // Send daily summary notification
+            const change = document.getElementById('tvl-change').textContent || '';
+            new Notification('Shielded Sol Daily Update', {
+                body: `Today's TVL: ${fmtUsd(currentTvl)} ${change}`,
+                icon: '/api/icon?size=192',
+                tag: 'daily-update'
+            });
+
+            localStorage.setItem('lastNotificationDate', today);
+            lastNotificationDate = today;
         }
 
         // Register service worker
