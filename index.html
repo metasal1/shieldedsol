@@ -45,6 +45,9 @@
             margin-bottom: 0.25rem;
         }
         .total-value { font-size: 2rem; font-weight: 600; color: #9945FF; }
+        .tvl-change { font-size: 0.75rem; margin-top: 0.25rem; }
+        .tvl-change.up { color: #22c55e; }
+        .tvl-change.down { color: #ef4444; }
         .protocol {
             margin-bottom: 1rem;
             padding-bottom: 1rem;
@@ -141,6 +144,7 @@
         <div class="total">
             <div class="total-label">Total Value Locked</div>
             <div class="total-value" id="tvl">$--</div>
+            <div class="tvl-change" id="tvl-change"></div>
         </div>
 
         <div class="chart">
@@ -301,6 +305,19 @@
 
                 // Store and render chart from historical data
                 chartHistory = tvlData?.chainTvls?.Solana?.tvl || tvlData?.tvl || [];
+
+                // Calculate 24h change
+                if (chartHistory.length >= 2) {
+                    const current = chartHistory[chartHistory.length - 1]?.totalLiquidityUSD || 0;
+                    const yesterday = chartHistory[chartHistory.length - 2]?.totalLiquidityUSD || 0;
+                    if (yesterday > 0) {
+                        const change = ((current - yesterday) / yesterday) * 100;
+                        const changeEl = document.getElementById('tvl-change');
+                        const arrow = change >= 0 ? '↑' : '↓';
+                        changeEl.textContent = `${arrow} ${Math.abs(change).toFixed(2)}% (24h)`;
+                        changeEl.className = 'tvl-change ' + (change >= 0 ? 'up' : 'down');
+                    }
+                }
                 renderChart();
 
                 if (tvl > 0) {
