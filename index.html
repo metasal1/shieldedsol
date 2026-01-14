@@ -27,38 +27,54 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #000; --bg2: #0a0a0a; --bg3: #111;
+            --border: #222; --border2: #111;
+            --text: #fff; --text2: #888; --text3: #666; --text4: #444; --text5: #333;
+            --accent: #9945FF;
+        }
+        .light {
+            --bg: #fff; --bg2: #f5f5f5; --bg3: #eee;
+            --border: #ddd; --border2: #eee;
+            --text: #000; --text2: #444; --text3: #666; --text4: #888; --text5: #aaa;
+        }
         body {
             font-family: 'JetBrains Mono', monospace;
-            background: #000;
-            color: #fff;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
             padding: 1.5rem;
+            transition: background 0.3s, color 0.3s;
         }
         .container { max-width: 800px; margin: 0 auto; }
         header {
             margin-bottom: 1.5rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid #222;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
         }
+        .header-actions { display: flex; gap: 0.25rem; }
         h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
         .logo { width: 24px; height: 24px; background: #9945FF; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
-        .tagline { color: #666; font-size: 0.75rem; }
+        .tagline { color: var(--text3); font-size: 0.75rem; }
         .total { margin-bottom: 1.5rem; }
         .total-label {
-            color: #666;
+            color: var(--text3);
             font-size: 0.625rem;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             margin-bottom: 0.25rem;
         }
-        .total-value { font-size: 2rem; font-weight: 600; color: #9945FF; }
+        .total-value { font-size: 2rem; font-weight: 600; color: var(--accent); }
         .tvl-change { font-size: 0.75rem; margin-top: 0.25rem; }
         .tvl-change.up { color: #22c55e; }
         .tvl-change.down { color: #ef4444; }
         .protocol {
             margin-bottom: 1rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid #111;
+            border-bottom: 1px solid var(--border2);
         }
         .protocol:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .protocol-header {
@@ -77,82 +93,77 @@
         }
         .status-live { color: #22c55e; background: #22c55e10; }
         .status-upcoming { color: #eab308; background: #eab30810; }
-        .status-sunset { color: #666; background: #66666610; }
+        .status-sunset { color: var(--text3); background: var(--bg2); }
         .pools { display: flex; flex-direction: row; gap: 0.5rem; flex-wrap: wrap; }
         .pool {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0.5rem 0.75rem;
-            background: #0a0a0a;
+            background: var(--bg2);
             border-radius: 4px;
             flex: 1;
             min-width: 140px;
         }
-        .pool-asset { color: #888; font-size: 0.75rem; }
+        .pool-asset { color: var(--text2); font-size: 0.75rem; }
         .pool-balance { text-align: right; }
         .pool-amount { font-weight: 500; font-size: 0.875rem; }
-        .pool-usd { color: #666; font-size: 0.625rem; }
-        .loading { color: #333; }
+        .pool-usd { color: var(--text3); font-size: 0.625rem; }
+        .loading { color: var(--text5); }
         .protocol-link {
-            color: #444;
+            color: var(--text4);
             font-size: 0.625rem;
             text-decoration: none;
             margin-top: 0.5rem;
             display: inline-block;
         }
-        .protocol-link:hover { color: #888; }
-        .no-pools { color: #333; font-size: 0.75rem; padding: 0.5rem; }
-        .actions {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin: 1.5rem 0;
-            flex-wrap: wrap;
-        }
+        .protocol-link:hover { color: var(--text2); }
+        .no-pools { color: var(--text5); font-size: 0.75rem; padding: 0.5rem; }
         .action-btn {
-            background: #111;
-            border: 1px solid #222;
-            color: #666;
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--text3);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
         }
-        .action-btn:hover { border-color: #444; color: #fff; }
+        .action-btn:hover { border-color: var(--text4); color: var(--text); }
         .action-btn.active { border-color: #22c55e; color: #22c55e; }
         .chart { margin-bottom: 1.5rem; }
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-        .chart-title { color: #666; font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.1em; }
+        .chart-title { color: var(--text3); font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.1em; }
         .chart-tabs { display: flex; gap: 0.25rem; }
-        .chart-tab { background: none; border: 1px solid #222; color: #444; font-size: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 3px; cursor: pointer; font-family: inherit; }
-        .chart-tab:hover { border-color: #444; color: #666; }
-        .chart-tab.active { border-color: #9945FF; color: #9945FF; }
+        .chart-tab { background: none; border: 1px solid var(--border); color: var(--text4); font-size: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 3px; cursor: pointer; font-family: inherit; }
+        .chart-tab:hover { border-color: var(--text4); color: var(--text3); }
+        .chart-tab.active { border-color: var(--accent); color: var(--accent); }
         .chart-container { display: flex; align-items: flex-end; gap: 2px; height: 60px; }
         .chart-bar { flex: 1; background: #9945FF40; min-width: 3px; border-radius: 1px 1px 0 0; transition: background 0.2s; }
-        .chart-bar:hover { background: #9945FF; }
+        .chart-bar:hover { background: var(--accent); }
         .chart-labels { display: flex; justify-content: space-between; margin-top: 0.25rem; }
-        .chart-label { color: #444; font-size: 0.5rem; }
+        .chart-label { color: var(--text4); font-size: 0.5rem; }
         footer {
             margin-top: 1.5rem;
             padding-top: 1rem;
-            border-top: 1px solid #222;
-            color: #333;
+            border-top: 1px solid var(--border);
+            color: var(--text5);
             font-size: 0.625rem;
         }
+        footer a { color: var(--text4); }
+        footer a:hover { color: var(--text2); }
         .refresh {
-            color: #333;
+            color: var(--text5);
             font-size: 0.625rem;
             cursor: pointer;
             background: none;
             border: none;
             font-family: inherit;
         }
-        .refresh:hover { color: #666; }
+        .refresh:hover { color: var(--text3); }
         /* Mobile */
         @media (max-width: 600px) {
             body { padding: 1rem; }
@@ -166,8 +177,30 @@
 <body>
     <div class="container">
         <header>
-            <h1><span class="logo">S</span>Shielded Sol</h1>
-            <p class="tagline">Solana Privacy Pools</p>
+            <div>
+                <h1><span class="logo">S</span>Shielded Sol</h1>
+                <p class="tagline">Solana Privacy Pools</p>
+            </div>
+            <div class="header-actions">
+                <button class="action-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle Theme">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                </button>
+                <button class="action-btn" id="alert-btn" onclick="toggleAlerts()" title="TVL Alerts">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </button>
+                <button class="action-btn" onclick="shareTwitter()" title="Share on X">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </button>
+                <button class="action-btn" onclick="shareTelegram()" title="Share on Telegram">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                </button>
+                <button class="action-btn" onclick="shareDiscord()" title="Copy for Discord" id="discord-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.618-1.25.077.077 0 00-.079-.037A19.74 19.74 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.1 13.1 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.3 12.3 0 01-1.873.892.076.076 0 00-.041.107c.36.698.772 1.363 1.225 1.993a.076.076 0 00.084.028 19.84 19.84 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418z"/></svg>
+                </button>
+                <button class="action-btn" onclick="copyStats()" title="Copy Stats" id="copy-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+            </div>
         </header>
 
         <div class="total">
@@ -194,24 +227,7 @@
 
         <div id="protocols"></div>
 
-        <div class="actions">
-            <button class="action-btn" id="alert-btn" onclick="toggleAlerts()" title="TVL Alerts">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            </button>
-            <button class="action-btn" onclick="shareTwitter()" title="Share on X">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </button>
-            <button class="action-btn" onclick="shareTelegram()" title="Share on Telegram">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-            </button>
-            <button class="action-btn" onclick="shareDiscord()" title="Copy for Discord" id="discord-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/></svg>
-            </button>
-            <button class="action-btn" onclick="copyStats()" title="Copy Stats" id="copy-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            </button>
-        </div>
-        <footer>
+                <footer>
             <button class="refresh" onclick="refresh()">refresh</button>
             <span id="updated"></span>
             <span style="float:right">
@@ -268,6 +284,16 @@
         let alertsEnabled = localStorage.getItem('alerts') === 'true';
         let lastTvl = parseFloat(localStorage.getItem('lastTvl')) || 0;
         const ALERT_THRESHOLD = 10; // Alert on 10%+ change
+        let lightMode = localStorage.getItem('theme') === 'light';
+
+        function toggleTheme() {
+            lightMode = !lightMode;
+            document.body.classList.toggle('light', lightMode);
+            localStorage.setItem('theme', lightMode ? 'light' : 'dark');
+        }
+
+        // Apply saved theme
+        if (lightMode) document.body.classList.add('light');
 
         function fmt(n, d = 2) {
             if (n == null || isNaN(n)) return '--';
