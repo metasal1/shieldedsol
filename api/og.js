@@ -35,7 +35,7 @@ export default async function handler(req) {
       <text x="80" y="320" font-family="monospace" font-size="18" fill="#666" text-transform="uppercase" letter-spacing="2">Total Value Locked</text>
       <text x="80" y="400" font-family="monospace" font-size="96" fill="#9945FF" font-weight="bold">${tvl}</text>
       <text x="80" y="500" font-family="monospace" font-size="24" fill="#444">${protocols} protocols tracked</text>
-      <text x="80" y="570" font-family="monospace" font-size="18" fill="#333">shieldedsol.vercel.app</text>
+      <text x="80" y="570" font-family="monospace" font-size="18" fill="#333">shieldedsol.com</text>
     </svg>
   `;
 
