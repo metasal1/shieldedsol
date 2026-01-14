@@ -178,6 +178,7 @@
             <span style="float:right">
                 <button class="refresh" id="alert-btn" onclick="toggleAlerts()">alerts: off</button> ·
                 <button class="refresh" onclick="shareTwitter()">share</button> ·
+                <button class="refresh" id="copy-btn" onclick="copyStats()">copy</button> ·
                 <a href="https://t.me/metasal" target="_blank">+ add protocol</a> ·
                 <a href="https://metasal.xyz" target="_blank">metasal.xyz</a>
             </span>
@@ -399,6 +400,20 @@
 Track privacy protocols live on shieldedsol.com`;
             const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
             window.open(url, '_blank', 'width=550,height=420');
+        }
+
+        async function copyStats() {
+            const tvl = document.getElementById('tvl').textContent;
+            const change = document.getElementById('tvl-change').textContent;
+            const text = `Solana Privacy Pools\nTVL: ${tvl} ${change}\n\nshieldedsol.com`;
+            await navigator.clipboard.writeText(text);
+            const btn = document.getElementById('copy-btn');
+            btn.textContent = 'copied!';
+            btn.style.color = '#22c55e';
+            setTimeout(() => {
+                btn.textContent = 'copy';
+                btn.style.color = '';
+            }, 1500);
         }
 
         function checkTvlAlert(currentTvl) {
