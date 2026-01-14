@@ -177,6 +177,7 @@
             <span id="updated"></span>
             <span style="float:right">
                 <button class="refresh" id="alert-btn" onclick="toggleAlerts()">alerts: off</button> ·
+                <button class="refresh" onclick="shareTwitter()">share</button> ·
                 <a href="https://t.me/metasal" target="_blank">+ add protocol</a> ·
                 <a href="https://metasal.xyz" target="_blank">metasal.xyz</a>
             </span>
@@ -388,6 +389,16 @@
             const btn = document.getElementById('alert-btn');
             btn.textContent = alertsEnabled ? 'alerts: on' : 'alerts: off';
             btn.style.color = alertsEnabled ? '#22c55e' : '#333';
+        }
+
+        function shareTwitter() {
+            const tvl = document.getElementById('tvl').textContent;
+            const change = document.getElementById('tvl-change').textContent;
+            const text = `Solana Privacy Pools TVL: ${tvl} ${change}
+
+Track privacy protocols live on shieldedsol.com`;
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank', 'width=550,height=420');
         }
 
         function checkTvlAlert(currentTvl) {
