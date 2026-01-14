@@ -85,7 +85,12 @@
         .protocol-link:hover { color: #888; }
         .no-pools { color: #333; font-size: 0.75rem; padding: 0.5rem; }
         .chart { margin-bottom: 1.5rem; }
-        .chart-title { color: #666; font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .chart-title { color: #666; font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.1em; }
+        .chart-tabs { display: flex; gap: 0.25rem; }
+        .chart-tab { background: none; border: 1px solid #222; color: #444; font-size: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 3px; cursor: pointer; font-family: inherit; }
+        .chart-tab:hover { border-color: #444; color: #666; }
+        .chart-tab.active { border-color: #9945FF; color: #9945FF; }
         .chart-container { display: flex; align-items: flex-end; gap: 2px; height: 60px; }
         .chart-bar { flex: 1; background: #9945FF40; min-width: 3px; border-radius: 1px 1px 0 0; transition: background 0.2s; }
         .chart-bar:hover { background: #9945FF; }
@@ -129,7 +134,14 @@
         </div>
 
         <div class="chart">
-            <div class="chart-title">TVL History (30d)</div>
+            <div class="chart-header">
+                <div class="chart-title">TVL History</div>
+                <div class="chart-tabs">
+                    <button class="chart-tab active" onclick="setChartPeriod(7)">7D</button>
+                    <button class="chart-tab" onclick="setChartPeriod(30)">30D</button>
+                    <button class="chart-tab" onclick="setChartPeriod(90)">90D</button>
+                </div>
+            </div>
             <div class="chart-container" id="chart"></div>
             <div class="chart-labels">
                 <span class="chart-label" id="chart-start">--</span>
@@ -188,6 +200,8 @@
 
         let solPrice = 0;
         let poolData = {};
+        let chartHistory = [];
+        let chartPeriod = 7;
 
         function fmt(n, d = 2) {
             if (n == null || isNaN(n)) return '--';
@@ -236,21 +250,28 @@
             }).join('');
         }
 
-        function renderChart(history) {
+        function renderChart() {
             const chart = document.getElementById('chart');
-            const last30 = history.slice(-30);
-            if (last30.length === 0) return;
+            const data = chartHistory.slice(-chartPeriod);
+            if (data.length === 0) return;
 
-            const max = Math.max(...last30.map(d => d.totalLiquidityUSD));
-            chart.innerHTML = last30.map(d => {
+            const max = Math.max(...data.map(d => d.totalLiquidityUSD));
+            chart.innerHTML = data.map(d => {
                 const h = max > 0 ? (d.totalLiquidityUSD / max) * 100 : 0;
                 return `<div class="chart-bar" style="height:${h}%" title="${fmtUsd(d.totalLiquidityUSD)}"></div>`;
             }).join('');
 
-            const startDate = new Date(last30[0].date * 1000);
-            const endDate = new Date(last30[last30.length - 1].date * 1000);
+            const startDate = new Date(data[0].date * 1000);
+            const endDate = new Date(data[data.length - 1].date * 1000);
             document.getElementById('chart-start').textContent = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             document.getElementById('chart-end').textContent = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function setChartPeriod(days) {
+            chartPeriod = days;
+            document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderChart();
         }
 
         async function fetchData() {
@@ -268,9 +289,9 @@
 
                 document.getElementById('tvl').textContent = fmtUsd(tvl);
 
-                // Render chart from historical data
-                const history = tvlData?.chainTvls?.Solana?.tvl || tvlData?.tvl || [];
-                renderChart(history);
+                // Store and render chart from historical data
+                chartHistory = tvlData?.chainTvls?.Solana?.tvl || tvlData?.tvl || [];
+                renderChart();
 
                 if (tvl > 0) {
                     const solVal = tvl * 0.7;
