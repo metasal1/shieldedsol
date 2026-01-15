@@ -103,7 +103,7 @@
             padding: 0.5rem 0.75rem;
             background: var(--bg2);
             border-radius: 4px;
-            flex: 1;
+            flex: 1 1 auto;
             min-width: 140px;
         }
         .pool-asset { color: var(--text2); font-size: 0.75rem; }
@@ -170,7 +170,11 @@
             body { padding: 1rem; }
             h1 { font-size: 1rem; }
             .total-value { font-size: 1.5rem; }
-            .pool { min-width: 100px; }
+            .pool {
+                flex: 1 1 calc(50% - 0.25rem);
+                min-width: calc(50% - 0.25rem);
+                max-width: calc(50% - 0.25rem);
+            }
         }
         /* iOS Install Banner */
         .ios-install-banner {
@@ -339,6 +343,8 @@
 
         function fmt(n, d = 2) {
             if (n == null || isNaN(n)) return '--';
+            if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+            if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
             return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
         }
 
