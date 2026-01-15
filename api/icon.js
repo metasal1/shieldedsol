@@ -1,9 +1,5 @@
-export const config = {
-  runtime: 'edge',
-};
-
-export default async function handler(req) {
-  const url = new URL(req.url);
+export default function handler(req, res) {
+  const url = new URL(req.url, `http://${req.headers.host}`);
   const size = parseInt(url.searchParams.get('size') || '192');
 
   const svg = `
@@ -13,10 +9,7 @@ export default async function handler(req) {
     </svg>
   `;
 
-  return new Response(svg, {
-    headers: {
-      'Content-Type': 'image/svg+xml',
-      'Cache-Control': 'public, max-age=31536000',
-    },
-  });
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=31536000');
+  res.status(200).send(svg);
 }
