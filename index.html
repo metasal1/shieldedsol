@@ -172,6 +172,36 @@
             .total-value { font-size: 1.5rem; }
             .pool { min-width: 100px; }
         }
+        /* iOS Install Banner */
+        .ios-install-banner {
+            display: none;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.75rem;
+        }
+        .ios-install-banner.show { display: block; }
+        .ios-install-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .ios-install-title { font-weight: 600; color: var(--text); }
+        .ios-install-close {
+            background: none;
+            border: none;
+            color: var(--text4);
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            padding: 0;
+        }
+        .ios-install-close:hover { color: var(--text2); }
+        .ios-install-steps { color: var(--text2); line-height: 1.5; }
+        .ios-install-steps svg { width: 14px; height: 14px; vertical-align: middle; margin: 0 2px; }
     </style>
     <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -203,6 +233,16 @@
                 </button>
             </div>
         </header>
+
+        <div class="ios-install-banner" id="ios-install-banner">
+            <div class="ios-install-header">
+                <span class="ios-install-title">Install Shielded Sol</span>
+                <button class="ios-install-close" onclick="dismissIOSBanner()">&times;</button>
+            </div>
+            <div class="ios-install-steps">
+                Tap <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg> then "Add to Home Screen" to install this app.
+            </div>
+        </div>
 
         <div class="total">
             <div class="total-label">Total Value Locked</div>
@@ -244,7 +284,7 @@
                 name: 'Privacy Cash',
                 status: 'live',
                 url: 'https://privacycash.org',
-                pools: ['SOL', 'USDC']
+                pools: ['SOL', 'USDC', 'USDT', 'ORE']
             },
             {
                 name: 'Radr Labs',
@@ -526,6 +566,29 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js');
         }
+
+        // iOS Install Prompt
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        }
+
+        function isInStandaloneMode() {
+            return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        }
+
+        function showIOSInstallPrompt() {
+            if (isIOS() && !isInStandaloneMode() && !localStorage.getItem('iosInstallDismissed')) {
+                document.getElementById('ios-install-banner').classList.add('show');
+            }
+        }
+
+        function dismissIOSBanner() {
+            document.getElementById('ios-install-banner').classList.remove('show');
+            localStorage.setItem('iosInstallDismissed', 'true');
+        }
+
+        // Show iOS install prompt after a short delay
+        setTimeout(showIOSInstallPrompt, 2000);
     </script>
 </body>
 </html>
