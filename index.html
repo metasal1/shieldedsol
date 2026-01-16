@@ -15,6 +15,7 @@
     <meta property="og:type" content="website">
     <meta name="telegram:channel" content="@shieldedsol">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@shieldedsol">
     <meta name="twitter:title" content="Shielded Sol - Real-Time Solana Privacy Pool Tracker">
     <meta name="twitter:description" content="Track Solana privacy protocol TVL in real-time. Monitor Privacy Cash, Radr Labs, and other privacy pools with live balances, historical charts, and TVL alerts.">
     <meta name="twitter:image" content="https://shieldedsol.com/api/og">
@@ -253,7 +254,7 @@
         </div>
 
         <div class="total">
-            <div class="total-label">Total Value Locked</div>
+            <div class="total-label">Total Value Locked · <span id="sol-price">SOL $--</span></div>
             <div class="total-value" id="tvl">$--</div>
             <div class="tvl-change" id="tvl-change"></div>
         </div>
@@ -280,6 +281,7 @@
             <button class="refresh" onclick="refresh()">refresh</button>
             <span id="updated"></span>
             <span style="float:right">
+                <a href="https://x.com/shieldedsol" target="_blank">@shieldedsol</a> ·
                 <a href="https://t.me/metasal" target="_blank">+ add protocol</a> ·
                 <a href="https://metasal.xyz" target="_blank">metasal.xyz</a>
             </span>
@@ -426,10 +428,21 @@
 
         async function fetchData() {
             try {
-                const [priceRes, tvlRes, turbineRes] = await Promise.all([
-                    fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'),
-                    fetch('https://api.llama.fi/protocol/privacy-cash'),
-                    fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+                // Fetch SOL price
+                try {
+                    const priceRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+                    const priceData = await priceRes.json();
+                    solPrice = priceData.solana?.usd || 180;
+                } catch (e) {
+                    console.error('Price fetch error:', e);
+                    solPrice = 180;
+                }
+                document.getElementById('sol-price').textContent = 'SOL $' + solPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                // Fetch Turbine ZSOL supply
+                let turbineZsol = 0;
+                try {
+                    const turbineRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -438,15 +451,7 @@
                             params: ['zso1EF4k8HNteye34aD8w2Fm6pYVWMDgkgWCUrMLip1'],
                             id: '1'
                         })
-                    })
-                ]);
-
-                const priceData = await priceRes.json();
-                solPrice = priceData.solana?.usd || 180;
-
-                // Fetch Turbine ZSOL supply
-                let turbineZsol = 0;
-                try {
+                    });
                     const turbineData = await turbineRes.json();
                     turbineZsol = turbineData?.result?.value?.uiAmount || 0;
                     console.log('Turbine ZSOL:', turbineZsol);
@@ -457,8 +462,16 @@
                     'ZSOL': { balance: turbineZsol, usd: turbineZsol * solPrice }
                 };
 
-                const tvlData = await tvlRes.json();
-                const privacyCashTvl = tvlData?.currentChainTvls?.Solana || tvlData?.tvl?.slice(-1)[0]?.totalLiquidityUSD || 0;
+                // Fetch Privacy Cash TVL
+                let privacyCashTvl = 0;
+                let tvlData = {};
+                try {
+                    const tvlRes = await fetch('https://api.llama.fi/protocol/privacy-cash');
+                    tvlData = await tvlRes.json();
+                    privacyCashTvl = tvlData?.currentChainTvls?.Solana || tvlData?.tvl?.slice(-1)[0]?.totalLiquidityUSD || 0;
+                } catch (e) {
+                    console.error('TVL fetch error:', e);
+                }
                 const tvl = privacyCashTvl + (turbineZsol * solPrice);
 
                 document.getElementById('tvl').textContent = fmtUsd(tvl);
