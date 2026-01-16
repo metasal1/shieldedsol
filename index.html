@@ -429,7 +429,7 @@
                 const [priceRes, tvlRes, turbineRes] = await Promise.all([
                     fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'),
                     fetch('https://api.llama.fi/protocol/privacy-cash'),
-                    fetch('https://api.mainnet-beta.solana.com', {
+                    fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
