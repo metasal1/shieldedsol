@@ -426,16 +426,41 @@
 
         async function fetchData() {
             try {
-                const [priceRes, tvlRes] = await Promise.all([
+                const [priceRes, tvlRes, turbineRes] = await Promise.all([
                     fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'),
-                    fetch('https://api.llama.fi/protocol/privacy-cash')
+                    fetch('https://api.llama.fi/protocol/privacy-cash'),
+                    fetch('https://api.mainnet-beta.solana.com', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            method: 'getProgramAccounts',
+                            jsonrpc: '2.0',
+                            params: ['FGKoWNsvTTDCGW9JyR2DJWNzSXpejWk7yXcKsFFj9GQp', {
+                                encoding: 'base64',
+                                commitment: 'confirmed',
+                                filters: [{ memcmp: { offset: 0, bytes: 'bZtq2oCNQfA', encoding: 'base58' } }]
+                            }],
+                            id: '1'
+                        })
+                    })
                 ]);
 
                 const priceData = await priceRes.json();
                 solPrice = priceData.solana?.usd || 180;
 
+                // Fetch Turbine ZSOL balance
+                const turbineData = await turbineRes.json();
+                let turbineZsol = 0;
+                if (turbineData?.result) {
+                    turbineZsol = turbineData.result.reduce((sum, acc) => sum + (acc.account?.lamports || 0), 0) / 1e9;
+                }
+                poolData['Turbine'] = {
+                    'ZSOL': { balance: turbineZsol, usd: turbineZsol * solPrice }
+                };
+
                 const tvlData = await tvlRes.json();
-                const tvl = tvlData?.currentChainTvls?.Solana || tvlData?.tvl?.slice(-1)[0]?.totalLiquidityUSD || 0;
+                const privacyCashTvl = tvlData?.currentChainTvls?.Solana || tvlData?.tvl?.slice(-1)[0]?.totalLiquidityUSD || 0;
+                const tvl = privacyCashTvl + (turbineZsol * solPrice);
 
                 document.getElementById('tvl').textContent = fmtUsd(tvl);
                 checkTvlAlert(tvl);
@@ -458,9 +483,9 @@
                 renderChart();
                 checkDailyNotification(tvl);
 
-                if (tvl > 0) {
-                    const solVal = tvl * 0.7;
-                    const usdcVal = tvl * 0.3;
+                if (privacyCashTvl > 0) {
+                    const solVal = privacyCashTvl * 0.7;
+                    const usdcVal = privacyCashTvl * 0.3;
                     poolData['Privacy Cash'] = {
                         'SOL': { balance: solVal / solPrice, usd: solVal },
                         'USDC': { balance: usdcVal, usd: usdcVal }
