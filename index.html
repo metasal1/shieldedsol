@@ -445,8 +445,14 @@
                 solPrice = priceData.solana?.usd || 180;
 
                 // Fetch Turbine ZSOL supply
-                const turbineData = await turbineRes.json();
-                const turbineZsol = turbineData?.result?.value?.uiAmount || 0;
+                let turbineZsol = 0;
+                try {
+                    const turbineData = await turbineRes.json();
+                    turbineZsol = turbineData?.result?.value?.uiAmount || 0;
+                    console.log('Turbine ZSOL:', turbineZsol);
+                } catch (e) {
+                    console.error('Turbine fetch error:', e);
+                }
                 poolData['Turbine'] = {
                     'ZSOL': { balance: turbineZsol, usd: turbineZsol * solPrice }
                 };
