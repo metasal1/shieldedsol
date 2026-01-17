@@ -66,33 +66,22 @@ export default async function handler(req, res) {
   // For now, redirect to a static OG image if available, otherwise serve SVG
   // Most social platforms now support SVG, but Telegram doesn't
 
-  // Check User-Agent for Telegram bot
-  const ua = req.headers['user-agent'] || '';
-  const isTelegram = ua.toLowerCase().includes('telegrambot');
+  // Always serve PNG for maximum compatibility (Twitter, Telegram, Discord, etc.)
+  // Include call-to-action in the text
+  const text = encodeURIComponent(`Shielded Sol\\nTVL: ${tvl}${change ? ' ' + change : ''}\\n\\nTrack Solana Privacy Pools ➔`);
+  const pngUrl = `https://placehold.co/1200x630/0f0f1a/9945FF.png?text=${text}&font=source-code-pro`;
 
-  if (isTelegram) {
-    // For Telegram, use placehold.co with text (no logo but works)
-    const text = encodeURIComponent(`Shielded Sol\\nTVL: ${tvl}${change ? ' ' + change : ''}\\n\\nSolana Privacy Pools`);
-    const fallbackUrl = `https://placehold.co/1200x630/0f0f1a/9945FF.png?text=${text}&font=source-code-pro`;
+  try {
+    const pngRes = await fetch(pngUrl);
+    if (pngRes.ok) {
+      const pngBuffer = await pngRes.arrayBuffer();
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      res.status(200).send(Buffer.from(pngBuffer));
+      return;
+    }
+  } catch (e) {}
 
-    try {
-      const pngRes = await fetch(fallbackUrl);
-      if (pngRes.ok) {
-        const pngBuffer = await pngRes.arrayBuffer();
-        res.setHeader('Content-Type', 'image/png');
-        res.setHeader('Cache-Control', 'public, max-age=60');
-        res.status(200).send(Buffer.from(pngBuffer));
-        return;
-      }
-    } catch (e) {}
-
-    // Ultimate fallback
-    res.redirect(307, fallbackUrl);
-    return;
-  }
-
-  // For other platforms (Twitter/X, Discord, etc.), serve SVG with logo
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.setHeader('Cache-Control', 'public, max-age=60');
-  res.status(200).send(svg);
+  // Fallback - redirect to the PNG service
+  res.redirect(307, pngUrl);
 }
