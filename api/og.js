@@ -68,11 +68,18 @@ export default async function handler(req, res) {
   const svgBase64 = Buffer.from(svg).toString('base64');
   const svgDataUri = `data:image/svg+xml;base64,${svgBase64}`;
 
-  // Try quickchart.io for SVG to PNG conversion (free, no API key)
-  const quickchartUrl = `https://quickchart.io/convert/svg-to-png?svg=${encodeURIComponent(svg)}&width=1200&height=630`;
-
+  // Try quickchart.io for SVG to PNG conversion (POST for large SVGs)
   try {
-    const pngRes = await fetch(quickchartUrl);
+    const pngRes = await fetch('https://quickchart.io/chart/render/svg', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        svg: svg,
+        width: 1200,
+        height: 630,
+        format: 'png'
+      })
+    });
     if (pngRes.ok) {
       const pngBuffer = await pngRes.arrayBuffer();
       res.setHeader('Content-Type', 'image/png');
@@ -82,6 +89,24 @@ export default async function handler(req, res) {
     }
   } catch (e) {
     console.error('PNG conversion failed:', e);
+  }
+
+  // Try svg2png.deno.dev as backup
+  try {
+    const svg2pngRes = await fetch('https://svg2png.deno.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'image/svg+xml' },
+      body: svg
+    });
+    if (svg2pngRes.ok) {
+      const pngBuffer = await svg2pngRes.arrayBuffer();
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      res.status(200).send(Buffer.from(pngBuffer));
+      return;
+    }
+  } catch (e) {
+    console.error('Backup PNG conversion failed:', e);
   }
 
   // Fallback to SVG (works in browsers, some social platforms)
