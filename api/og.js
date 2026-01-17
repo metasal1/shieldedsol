@@ -1,7 +1,10 @@
+import sharp from 'sharp';
+
 export default async function handler(req, res) {
   // Fetch TVL from DeFiLlama
   let tvl = '--';
   let change = '';
+  let changeColor = '#888';
 
   try {
     const apiRes = await fetch('https://api.llama.fi/protocol/privacy-cash');
@@ -23,6 +26,7 @@ export default async function handler(req, res) {
         const pct = ((current - yesterday) / yesterday) * 100;
         const arrow = pct >= 0 ? '↑' : '↓';
         change = `${arrow}${Math.abs(pct).toFixed(1)}%`;
+        changeColor = pct >= 0 ? '#22c55e' : '#ef4444';
       }
     }
   } catch (e) {
@@ -52,7 +56,7 @@ export default async function handler(req, res) {
   <!-- TVL Section -->
   <text x="80" y="260" font-family="Arial, sans-serif" font-size="16" fill="#666" letter-spacing="3">TOTAL VALUE LOCKED</text>
   <text x="80" y="360" font-family="Arial, sans-serif" font-size="120" fill="#9945FF" font-weight="bold">${tvl}</text>
-  <text x="80" y="420" font-family="Arial, sans-serif" font-size="32" fill="${change.includes('↑') ? '#22c55e' : '#ef4444'}">${change} (24h)</text>
+  <text x="80" y="420" font-family="Arial, sans-serif" font-size="32" fill="${changeColor}">${change} (24h)</text>
 
   <!-- CTA Button -->
   <rect x="900" y="520" width="220" height="50" rx="8" fill="#9945FF"/>
@@ -62,55 +66,20 @@ export default async function handler(req, res) {
   <text x="80" y="555" font-family="Arial, sans-serif" font-size="18" fill="#444">shieldedsol.com</text>
 </svg>`;
 
-  // Convert SVG to PNG using resvg-js or serve SVG
-  // Most platforms now accept SVG, but we'll use a conversion service for compatibility
-
-  const svgBase64 = Buffer.from(svg).toString('base64');
-  const svgDataUri = `data:image/svg+xml;base64,${svgBase64}`;
-
-  // Try quickchart.io for SVG to PNG conversion (POST for large SVGs)
   try {
-    const pngRes = await fetch('https://quickchart.io/chart/render/svg', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        svg: svg,
-        width: 1200,
-        height: 630,
-        format: 'png'
-      })
-    });
-    if (pngRes.ok) {
-      const pngBuffer = await pngRes.arrayBuffer();
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Cache-Control', 'public, max-age=60');
-      res.status(200).send(Buffer.from(pngBuffer));
-      return;
-    }
+    // Convert SVG to PNG using sharp
+    const pngBuffer = await sharp(Buffer.from(svg))
+      .png()
+      .toBuffer();
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=60');
+    res.status(200).send(pngBuffer);
   } catch (e) {
     console.error('PNG conversion failed:', e);
+    // Fallback to SVG
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=60');
+    res.status(200).send(svg);
   }
-
-  // Try svg2png.deno.dev as backup
-  try {
-    const svg2pngRes = await fetch('https://svg2png.deno.dev/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'image/svg+xml' },
-      body: svg
-    });
-    if (svg2pngRes.ok) {
-      const pngBuffer = await svg2pngRes.arrayBuffer();
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Cache-Control', 'public, max-age=60');
-      res.status(200).send(Buffer.from(pngBuffer));
-      return;
-    }
-  } catch (e) {
-    console.error('Backup PNG conversion failed:', e);
-  }
-
-  // Fallback to SVG (works in browsers, some social platforms)
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.setHeader('Cache-Control', 'public, max-age=60');
-  res.status(200).send(svg);
 }
