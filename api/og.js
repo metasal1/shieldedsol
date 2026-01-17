@@ -34,8 +34,12 @@ export default async function handler(req, res) {
   }
 
   // Create SVG with logo and better design
+  // Use embedded Google Font via CSS
   const svg = `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
   <defs>
+    <style>
+      text { font-family: 'DejaVu Sans', 'Liberation Sans', 'Noto Sans', sans-serif; }
+    </style>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#0f0f1a"/>
       <stop offset="100%" style="stop-color:#1a1025"/>
@@ -50,20 +54,20 @@ export default async function handler(req, res) {
   </g>
 
   <!-- Title -->
-  <text x="180" y="110" font-family="Arial, sans-serif" font-size="48" fill="white" font-weight="bold">Shielded Sol</text>
-  <text x="180" y="150" font-family="Arial, sans-serif" font-size="22" fill="#666">Solana Privacy Pools Tracker</text>
+  <text x="180" y="110" font-size="48" fill="white" font-weight="bold">Shielded Sol</text>
+  <text x="180" y="150" font-size="22" fill="#666">Solana Privacy Pools Tracker</text>
 
   <!-- TVL Section -->
-  <text x="80" y="260" font-family="Arial, sans-serif" font-size="16" fill="#666" letter-spacing="3">TOTAL VALUE LOCKED</text>
-  <text x="80" y="360" font-family="Arial, sans-serif" font-size="120" fill="#9945FF" font-weight="bold">${tvl}</text>
-  <text x="80" y="420" font-family="Arial, sans-serif" font-size="32" fill="${changeColor}">${change} (24h)</text>
+  <text x="80" y="260" font-size="16" fill="#666" letter-spacing="3">TOTAL VALUE LOCKED</text>
+  <text x="80" y="360" font-size="120" fill="#9945FF" font-weight="bold">${tvl}</text>
+  <text x="80" y="420" font-size="32" fill="${changeColor}">${change} (24h)</text>
 
   <!-- CTA Button -->
   <rect x="900" y="520" width="220" height="50" rx="8" fill="#9945FF"/>
-  <text x="1010" y="555" font-family="Arial, sans-serif" font-size="18" fill="white" font-weight="600" text-anchor="middle">Track Live TVL →</text>
+  <text x="1010" y="555" font-size="18" fill="white" font-weight="600" text-anchor="middle">Track Live TVL</text>
 
   <!-- Footer -->
-  <text x="80" y="555" font-family="Arial, sans-serif" font-size="18" fill="#444">shieldedsol.com</text>
+  <text x="80" y="555" font-size="18" fill="#444">shieldedsol.com</text>
 </svg>`;
 
   try {
