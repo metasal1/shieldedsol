@@ -1,10 +1,10 @@
-import sharp from 'sharp';
+import { createCanvas } from 'canvas';
 
 export default async function handler(req, res) {
   // Fetch TVL from DeFiLlama
   let tvl = '--';
   let change = '';
-  let changeColor = '#888';
+  let changeColor = '#888888';
 
   try {
     const apiRes = await fetch('https://api.llama.fi/protocol/privacy-cash');
@@ -33,57 +33,116 @@ export default async function handler(req, res) {
     console.error('Failed to fetch TVL:', e);
   }
 
-  // Create SVG with logo and better design
-  // Use embedded Google Font via CSS
-  const svg = `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <style>
-      text { font-family: 'DejaVu Sans', 'Liberation Sans', 'Noto Sans', sans-serif; }
-    </style>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0f0f1a"/>
-      <stop offset="100%" style="stop-color:#1a1025"/>
-    </linearGradient>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
+  // Create canvas
+  const width = 1200;
+  const height = 630;
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
 
-  <!-- Logo -->
-  <g transform="translate(80, 60) scale(0.18)">
-    <path d="M43.3934 115.601C44.8259 108.227 76.0746 90.9703 142.199 61.0331C195.388 36.9467 244.347 17.1336 250.995 17.0007C257.644 16.8677 306.603 36.4511 359.792 60.5133L456.5 104.274L455.551 152.368C454.36 212.46 435.333 290.201 410.334 337.098C388.986 377.148 327.147 439.168 282.419 465.382L253.8 482.148L222.237 465.212C204.878 455.892 171.441 429.231 147.935 405.961C102.355 360.84 80.1001 321.945 64.2884 259.792C53.04 215.573 40.6191 129.871 43.3934 115.601Z" fill="#9945FF"/>
-    <path d="M351.916 274.073L317.744 310.489C317.005 311.28 316.11 311.912 315.114 312.344C314.119 312.776 313.045 312.999 311.959 313H149.97C149.198 313 148.442 312.775 147.796 312.354C147.149 311.934 146.641 311.335 146.332 310.631C146.023 309.927 145.927 309.149 146.056 308.392C146.185 307.635 146.533 306.932 147.059 306.368L181.192 269.952C181.931 269.161 182.826 268.53 183.821 268.098C184.817 267.666 185.891 267.442 186.977 267.441H348.965C349.745 267.425 350.512 267.639 351.17 268.055C351.828 268.471 352.347 269.071 352.662 269.78C352.978 270.489 353.075 271.275 352.942 272.039C352.81 272.803 352.452 273.51 351.916 274.073ZM317.744 200.722C317.002 199.935 316.106 199.306 315.112 198.874C314.117 198.443 313.044 198.217 311.959 198.211H149.97C149.198 198.212 148.442 198.436 147.796 198.857C147.149 199.278 146.641 199.877 146.332 200.581C146.023 201.284 145.927 202.062 146.056 202.819C146.185 203.576 146.533 204.28 147.059 204.843L181.192 241.279C181.934 242.066 182.83 242.695 183.824 243.126C184.819 243.558 185.892 243.784 186.977 243.79H348.965C349.736 243.786 350.489 243.558 351.133 243.136C351.776 242.714 352.282 242.115 352.589 241.412C352.895 240.709 352.989 239.932 352.86 239.177C352.73 238.422 352.382 237.72 351.858 237.158L317.744 200.722ZM149.97 174.56H311.959C313.045 174.559 314.119 174.335 315.114 173.903C316.11 173.471 317.005 172.84 317.744 172.049L351.916 135.632C352.316 135.212 352.618 134.708 352.801 134.158C352.982 133.607 353.04 133.024 352.968 132.449C352.897 131.874 352.699 131.322 352.388 130.832C352.077 130.342 351.661 129.926 351.169 129.614C350.512 129.198 349.745 128.985 348.965 129.001H186.977C185.891 129.002 184.817 129.226 183.821 129.658C182.826 130.09 181.931 130.721 181.192 131.512L147.059 167.928C146.533 168.491 146.185 169.195 146.056 169.952C145.927 170.709 146.023 171.487 146.332 172.191C146.641 172.895 147.149 173.493 147.796 173.914C148.442 174.335 149.198 174.559 149.97 174.56Z" fill="white"/>
-  </g>
+  // Background gradient
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, '#0f0f1a');
+  gradient.addColorStop(1, '#1a1025');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
 
-  <!-- Title -->
-  <text x="180" y="110" font-size="48" fill="white" font-weight="bold">Shielded Sol</text>
-  <text x="180" y="150" font-size="22" fill="#666">Solana Privacy Pools Tracker</text>
+  // Draw logo (shield with Solana logo inside)
+  ctx.save();
+  ctx.translate(80, 60);
+  ctx.scale(0.18, 0.18);
 
-  <!-- TVL Section -->
-  <text x="80" y="260" font-size="16" fill="#666" letter-spacing="3">TOTAL VALUE LOCKED</text>
-  <text x="80" y="360" font-size="120" fill="#9945FF" font-weight="bold">${tvl}</text>
-  <text x="80" y="420" font-size="32" fill="${changeColor}">${change} (24h)</text>
+  // Shield outline
+  ctx.beginPath();
+  ctx.fillStyle = '#9945FF';
+  ctx.moveTo(43.39, 115.6);
+  ctx.bezierCurveTo(44.83, 108.23, 76.07, 90.97, 142.2, 61.03);
+  ctx.bezierCurveTo(195.39, 36.95, 244.35, 17.13, 251, 17);
+  ctx.bezierCurveTo(257.64, 16.87, 306.6, 36.45, 359.79, 60.51);
+  ctx.lineTo(456.5, 104.27);
+  ctx.lineTo(455.55, 152.37);
+  ctx.bezierCurveTo(454.36, 212.46, 435.33, 290.2, 410.33, 337.1);
+  ctx.bezierCurveTo(388.99, 377.15, 327.15, 439.17, 282.42, 465.38);
+  ctx.lineTo(253.8, 482.15);
+  ctx.lineTo(222.24, 465.21);
+  ctx.bezierCurveTo(204.88, 455.89, 171.44, 429.23, 147.94, 405.96);
+  ctx.bezierCurveTo(102.36, 360.84, 80.1, 321.95, 64.29, 259.79);
+  ctx.bezierCurveTo(53.04, 215.57, 40.62, 129.87, 43.39, 115.6);
+  ctx.closePath();
+  ctx.fill();
 
-  <!-- CTA Button -->
-  <rect x="900" y="520" width="220" height="50" rx="8" fill="#9945FF"/>
-  <text x="1010" y="555" font-size="18" fill="white" font-weight="600" text-anchor="middle">Track Live TVL</text>
+  // Solana logo stripes (white)
+  ctx.fillStyle = '#ffffff';
+  // Top stripe
+  ctx.beginPath();
+  ctx.moveTo(149.97, 174.56);
+  ctx.lineTo(311.96, 174.56);
+  ctx.bezierCurveTo(313.05, 174.56, 314.12, 174.34, 315.11, 173.9);
+  ctx.bezierCurveTo(316.11, 173.47, 317.01, 172.84, 317.74, 172.05);
+  ctx.lineTo(351.92, 135.63);
+  ctx.bezierCurveTo(352.32, 135.21, 352.62, 134.71, 352.8, 134.16);
+  ctx.bezierCurveTo(352.98, 133.61, 353.04, 133.02, 352.97, 132.45);
+  ctx.bezierCurveTo(352.9, 131.87, 352.7, 131.32, 352.39, 130.83);
+  ctx.bezierCurveTo(352.08, 130.34, 351.66, 129.93, 351.17, 129.61);
+  ctx.bezierCurveTo(350.51, 129.2, 349.75, 128.99, 348.97, 129);
+  ctx.lineTo(186.98, 129);
+  ctx.bezierCurveTo(185.89, 129, 184.82, 129.23, 183.82, 129.66);
+  ctx.bezierCurveTo(182.83, 130.09, 181.93, 130.72, 181.19, 131.51);
+  ctx.lineTo(147.06, 167.93);
+  ctx.bezierCurveTo(146.53, 168.49, 146.19, 169.2, 146.06, 169.95);
+  ctx.bezierCurveTo(145.93, 170.71, 146.02, 171.49, 146.33, 172.19);
+  ctx.bezierCurveTo(146.64, 172.9, 147.15, 173.49, 147.8, 173.91);
+  ctx.bezierCurveTo(148.44, 174.34, 149.2, 174.56, 149.97, 174.56);
+  ctx.closePath();
+  ctx.fill();
 
-  <!-- Footer -->
-  <text x="80" y="555" font-size="18" fill="#444">shieldedsol.com</text>
-</svg>`;
+  ctx.restore();
 
-  try {
-    // Convert SVG to PNG using sharp
-    const pngBuffer = await sharp(Buffer.from(svg))
-      .png()
-      .toBuffer();
+  // Title
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 48px sans-serif';
+  ctx.fillText('Shielded Sol', 180, 110);
 
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=60');
-    res.status(200).send(pngBuffer);
-  } catch (e) {
-    console.error('PNG conversion failed:', e);
-    // Fallback to SVG
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.setHeader('Cache-Control', 'public, max-age=60');
-    res.status(200).send(svg);
-  }
+  ctx.fillStyle = '#666666';
+  ctx.font = '22px sans-serif';
+  ctx.fillText('Solana Privacy Pools Tracker', 180, 150);
+
+  // TVL Label
+  ctx.fillStyle = '#666666';
+  ctx.font = '16px sans-serif';
+  ctx.letterSpacing = '3px';
+  ctx.fillText('TOTAL VALUE LOCKED', 80, 260);
+
+  // TVL Value
+  ctx.fillStyle = '#9945FF';
+  ctx.font = 'bold 100px sans-serif';
+  ctx.fillText(tvl, 80, 370);
+
+  // 24h Change
+  ctx.fillStyle = changeColor;
+  ctx.font = '32px sans-serif';
+  ctx.fillText(`${change} (24h)`, 80, 430);
+
+  // CTA Button
+  ctx.fillStyle = '#9945FF';
+  ctx.beginPath();
+  ctx.roundRect(900, 520, 220, 50, 8);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '600 18px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Track Live TVL', 1010, 552);
+
+  // Footer
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#444444';
+  ctx.font = '18px sans-serif';
+  ctx.fillText('shieldedsol.com', 80, 555);
+
+  // Convert to PNG
+  const buffer = canvas.toBuffer('image/png');
+
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  res.status(200).send(buffer);
 }
