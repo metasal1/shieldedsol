@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   // Fetch TVL from DeFiLlama
   let tvl = '--';
   let change = '';
-  let isPositive = true;
+  let changeColor = '22c55e';
 
   try {
     const apiRes = await fetch('https://api.llama.fi/protocol/privacy-cash');
@@ -22,25 +22,27 @@ export default async function handler(req, res) {
       const yesterday = history[history.length - 2]?.totalLiquidityUSD || 0;
       if (yesterday > 0) {
         const pct = ((current - yesterday) / yesterday) * 100;
-        isPositive = pct >= 0;
-        change = `${isPositive ? '+' : ''}${pct.toFixed(1)}% 24h`;
+        const isPositive = pct >= 0;
+        change = `${isPositive ? '%2B' : ''}${pct.toFixed(1)}%25%2024h`;
+        changeColor = isPositive ? '22c55e' : 'ef4444';
       }
     }
   } catch (e) {
     console.error('Failed to fetch TVL:', e);
   }
 
-  // Use placehold.co with proper formatting
-  const line1 = 'SHIELDED SOL';
-  const line2 = `TVL: ${tvl}`;
-  const line3 = change || '';
-  const line4 = 'shieldedsol.com';
+  // Use Cloudinary to fetch base image and overlay text
+  // Base image URL (hosted logo on dark background)
+  const baseImageUrl = 'https://shieldedsol.com/og-base.png';
 
-  // Combine lines with newlines
-  const text = encodeURIComponent(`${line1}\n\n${line2}\n${line3}\n\n${line4}`);
+  // Cloudinary transformations for text overlay
+  const cloudinaryBase = 'https://res.cloudinary.com/demo/image/fetch';
 
-  // placehold.co supports newlines and custom fonts
-  const imageUrl = `https://placehold.co/1200x630/0f0f1a/9945FF.png?text=${text}&font=roboto`;
+  // Text overlays
+  const tvlOverlay = `l_text:Arial_80_bold:${encodeURIComponent(tvl)},co_rgb:9945FF,g_west,x_80,y_50`;
+  const changeOverlay = `l_text:Arial_28:${change},co_rgb:${changeColor},g_west,x_80,y_130`;
+
+  const imageUrl = `${cloudinaryBase}/${tvlOverlay}/${changeOverlay}/${encodeURIComponent(baseImageUrl)}`;
 
   try {
     const pngRes = await fetch(imageUrl);
@@ -55,6 +57,8 @@ export default async function handler(req, res) {
     console.error('Image fetch failed:', e);
   }
 
-  // Fallback redirect
-  res.redirect(307, imageUrl);
+  // Fallback to placehold.co
+  const fallbackText = encodeURIComponent(`SHIELDED SOL\n\nTVL: ${tvl}\n${change.replace(/%2B/g, '+').replace(/%25/g, '%').replace(/%20/g, ' ')}\n\nshieldedsol.com`);
+  const fallbackUrl = `https://placehold.co/1200x630/0f0f1a/9945FF.png?text=${fallbackText}&font=roboto`;
+  res.redirect(307, fallbackUrl);
 }
