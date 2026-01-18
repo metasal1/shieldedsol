@@ -21,8 +21,7 @@ export default async function handler(req, res) {
 
   // Fetch from our own protocols API
   try {
-    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://shieldedsol.com';
-    const apiRes = await fetch(`${baseUrl}/api/protocols`);
+    const apiRes = await fetch('https://shieldedsol.com/api/protocols');
     const data = await apiRes.json();
 
     const tvlVal = data?.totalTvl || 0;
