@@ -17,14 +17,15 @@ export default async function handler(req, res) {
   let tvl = '--';
   let change = '';
   let changeColor = '#22c55e';
+  let protocolCount = 0;
 
+  // Fetch from our own protocols API
   try {
-    const apiRes = await fetch('https://api.llama.fi/protocol/privacy-cash');
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://shieldedsol.com';
+    const apiRes = await fetch(`${baseUrl}/api/protocols`);
     const data = await apiRes.json();
 
-    // Get total TVL (sum of all chains via currentChainTvls)
-    const currentTvls = data?.currentChainTvls || {};
-    const tvlVal = Object.values(currentTvls).reduce((sum, val) => sum + (val || 0), 0);
+    const tvlVal = data?.totalTvl || 0;
     if (tvlVal >= 1e6) {
       tvl = '$' + (tvlVal / 1e6).toFixed(2) + 'M';
     } else if (tvlVal >= 1e3) {
@@ -33,8 +34,17 @@ export default async function handler(req, res) {
       tvl = '$' + tvlVal.toFixed(2);
     }
 
-    // Get 24h change from historical data
-    const chainTvls = data?.chainTvls || {};
+    // Count live protocols with TVL
+    protocolCount = data?.protocols?.filter(p => p.status === 'live' && p.tvl > 0).length || 0;
+  } catch (err) {
+    console.error('Failed to fetch from protocols API:', err);
+  }
+
+  // Get 24h change from DeFiLlama (for Privacy Cash historical data)
+  try {
+    const llamaRes = await fetch('https://api.llama.fi/protocol/privacy-cash');
+    const llamaData = await llamaRes.json();
+    const chainTvls = llamaData?.chainTvls || {};
     const allHistory = Object.values(chainTvls).flatMap(c => c?.tvl || []);
     if (allHistory.length >= 2) {
       allHistory.sort((a, b) => a.date - b.date);
@@ -48,7 +58,7 @@ export default async function handler(req, res) {
       }
     }
   } catch (err) {
-    console.error('Failed to fetch TVL:', err);
+    console.error('Failed to fetch 24h change:', err);
   }
 
   // Glass card element with gradient background
