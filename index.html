@@ -508,7 +508,7 @@
                 if (p.pools.length > 0) {
                     poolsHtml = '<div class="pools">' + p.pools.map(asset => {
                         const data = poolData[p.name]?.[asset];
-                        const amount = data?.balance != null ? `<span class="revealed">${fmt(data.balance, 4)}</span>` : '<span class="loading"></span>';
+                        const amount = data?.balance != null ? `<span class="revealed">${fmt(data.balance, 2)}</span>` : '<span class="loading"></span>';
                         const usd = data?.usd != null ? `<span class="revealed" style="animation-delay:0.15s">${fmtUsd(data.usd)}</span>` : '';
                         return `<div class="pool">
                             <span class="pool-asset">${asset}</span>
