@@ -101,11 +101,12 @@ export default async function handler(req, res) {
   const privacyCashMints = {
     USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     USDT: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
-    ORE: 'oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp'
+    ORE: 'oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp',
+    stORE: 'sTorERYB6xAZ1SSbwpK3zoK2EEwbBrc7TZAzg1uCGiH'
   };
 
   // Fetch Privacy Cash balances
-  const privacyCashBalances = { SOL: 0, USDC: 0, USDT: 0, ORE: 0 };
+  const privacyCashBalances = { SOL: 0, USDC: 0, USDT: 0, ORE: 0, stORE: 0 };
   try {
     // Fetch native SOL balance from SOL pool address
     const solRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
@@ -139,6 +140,7 @@ export default async function handler(req, res) {
       if (mint === privacyCashMints.USDC) privacyCashBalances.USDC = balance;
       else if (mint === privacyCashMints.USDT) privacyCashBalances.USDT = balance;
       else if (mint === privacyCashMints.ORE) privacyCashBalances.ORE = balance;
+      else if (mint === privacyCashMints.stORE) privacyCashBalances.stORE = balance;
     });
   } catch (e) {
     console.error('Privacy Cash fetch error:', e);
@@ -181,11 +183,11 @@ export default async function handler(req, res) {
         {
           asset: 'ORE',
           address: privacyCashTokenAddress,
-          balance: privacyCashBalances.ORE,
-          usd: privacyCashBalances.ORE * orePrice
+          balance: privacyCashBalances.ORE + privacyCashBalances.stORE,
+          usd: (privacyCashBalances.ORE + privacyCashBalances.stORE) * orePrice
         }
       ],
-      tvl: (privacyCashBalances.SOL * solPrice) + privacyCashBalances.USDC + privacyCashBalances.USDT + (privacyCashBalances.ORE * orePrice)
+      tvl: (privacyCashBalances.SOL * solPrice) + privacyCashBalances.USDC + privacyCashBalances.USDT + ((privacyCashBalances.ORE + privacyCashBalances.stORE) * orePrice)
     },
     {
       name: 'Radr Labs',
@@ -281,6 +283,7 @@ export default async function handler(req, res) {
   res.status(200).json({
     solPrice,
     bonkPrice,
+    orePrice,
     totalTvl,
     protocols,
     updatedAt: new Date().toISOString()
