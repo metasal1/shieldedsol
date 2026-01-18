@@ -95,22 +95,63 @@ export default async function handler(req, res) {
     console.error('Radr balances fetch error:', e);
   }
 
-  // Fetch Privacy Cash TVL from DeFiLlama
-  let privacyCashTvl = 0;
-  let privacyCashTokens = {};
-  try {
-    const tvlRes = await fetch('https://api.llama.fi/protocol/privacy-cash');
-    const tvlData = await tvlRes.json();
-    privacyCashTvl = tvlData?.currentChainTvls?.Solana || 0;
+  // Privacy Cash pool address and token mints
+  const privacyCashAddress = '2vV7xhCMWRrcLiwGoTaTRgvx98ku98TRJKPXhsS8jvBV';
+  const privacyCashMints = {
+    SOL: 'So11111111111111111111111111111111111111112',
+    USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    USDT: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+    ORE: 'oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp'
+  };
 
-    // Get token breakdown if available
-    const latestTokens = tvlData?.currentChainTvls || {};
-    if (tvlData?.tokensInUsd?.length > 0) {
-      const latest = tvlData.tokensInUsd[tvlData.tokensInUsd.length - 1];
-      privacyCashTokens = latest?.tokens || {};
-    }
+  // Fetch Privacy Cash balances
+  const privacyCashBalances = { SOL: 0, USDC: 0, USDT: 0, ORE: 0 };
+  try {
+    // Fetch native SOL balance
+    const solRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'getBalance', jsonrpc: '2.0', params: [privacyCashAddress], id: '1' })
+    });
+    const solData = await solRes.json();
+    privacyCashBalances.SOL = (solData?.result?.value || 0) / 1e9;
+
+    // Fetch all token accounts owned by Privacy Cash
+    const tokenRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        method: 'getTokenAccountsByOwner',
+        jsonrpc: '2.0',
+        params: [privacyCashAddress, { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' }, { encoding: 'jsonParsed' }],
+        id: '1'
+      })
+    });
+    const tokenData = await tokenRes.json();
+    const accounts = tokenData?.result?.value || [];
+
+    // Map balances by mint
+    accounts.forEach(acc => {
+      const info = acc?.account?.data?.parsed?.info;
+      const mint = info?.mint;
+      const balance = parseFloat(info?.tokenAmount?.uiAmountString || '0');
+
+      if (mint === privacyCashMints.USDC) privacyCashBalances.USDC = balance;
+      else if (mint === privacyCashMints.USDT) privacyCashBalances.USDT = balance;
+      else if (mint === privacyCashMints.ORE) privacyCashBalances.ORE = balance;
+    });
   } catch (e) {
     console.error('Privacy Cash fetch error:', e);
+  }
+
+  // Fetch ORE price
+  let orePrice = 0;
+  try {
+    const oreRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ore&vs_currencies=usd');
+    const oreData = await oreRes.json();
+    orePrice = oreData?.ore?.usd || 0;
+  } catch (e) {
+    console.error('ORE price fetch error:', e);
   }
 
   const protocols = [
@@ -121,30 +162,30 @@ export default async function handler(req, res) {
       pools: [
         {
           asset: 'SOL',
-          address: 'PCashXb7HnPsb5HE41i6TQ9xLJ6XxU49Cov2pBdxpump',
-          balance: privacyCashTvl > 0 ? (privacyCashTvl * 0.7) / solPrice : 0,
-          usd: privacyCashTvl * 0.7
+          address: privacyCashAddress,
+          balance: privacyCashBalances.SOL,
+          usd: privacyCashBalances.SOL * solPrice
         },
         {
           asset: 'USDC',
-          address: 'PCashXb7HnPsb5HE41i6TQ9xLJ6XxU49Cov2pBdxpump',
-          balance: privacyCashTvl * 0.3,
-          usd: privacyCashTvl * 0.3
+          address: privacyCashAddress,
+          balance: privacyCashBalances.USDC,
+          usd: privacyCashBalances.USDC
         },
         {
           asset: 'USDT',
-          address: 'PCashXb7HnPsb5HE41i6TQ9xLJ6XxU49Cov2pBdxpump',
-          balance: 0,
-          usd: 0
+          address: privacyCashAddress,
+          balance: privacyCashBalances.USDT,
+          usd: privacyCashBalances.USDT
         },
         {
           asset: 'ORE',
-          address: 'PCashXb7HnPsb5HE41i6TQ9xLJ6XxU49Cov2pBdxpump',
-          balance: 0,
-          usd: 0
+          address: privacyCashAddress,
+          balance: privacyCashBalances.ORE,
+          usd: privacyCashBalances.ORE * orePrice
         }
       ],
-      tvl: privacyCashTvl
+      tvl: (privacyCashBalances.SOL * solPrice) + privacyCashBalances.USDC + privacyCashBalances.USDT + (privacyCashBalances.ORE * orePrice)
     },
     {
       name: 'Radr Labs',
