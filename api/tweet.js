@@ -72,7 +72,40 @@ async function fetchTVL() {
   return { tvlFormatted, change, totalTvl };
 }
 
-async function postTweet(text) {
+async function fetchOgImage() {
+  // Fetch our dynamic OG image
+  const res = await fetch('https://shieldedsol.com/api/og');
+  const arrayBuffer = await res.arrayBuffer();
+  return Buffer.from(arrayBuffer).toString('base64');
+}
+
+async function uploadMedia(base64Image, apiKey, authToken) {
+  const body = {
+    authToken: authToken,
+    media_data: base64Image,
+    media_type: 'image/png',
+    proxy: '142.111.48.253:7030@khdrutfi:6k4w4qxpoqep'
+  };
+
+  const response = await fetch('https://api.tweetapi.com/tw-v2/media/upload', {
+    method: 'POST',
+    headers: {
+      'X-API-Key': apiKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Media upload error: ${response.status} - ${errorBody}`);
+  }
+
+  const data = await response.json();
+  return data.media_id_string || data.media_id;
+}
+
+async function postTweet(text, withMedia = false) {
   const apiKey = process.env.TWEETAPI;
   const authToken = process.env.TWITTER_AUTH_TOKEN;
 
@@ -80,17 +113,27 @@ async function postTweet(text) {
     throw new Error('TweetAPI credentials not configured');
   }
 
-  const response = await fetch('https://api.tweetapi.com/tw-v2/interaction/create-post', {
+  const body = {
+    authToken: authToken,
+    text: text,
+    proxy: '142.111.48.253:7030@khdrutfi:6k4w4qxpoqep'
+  };
+
+  // Use different endpoint for media tweets
+  let endpoint = 'https://api.tweetapi.com/tw-v2/interaction/create-post';
+
+  if (withMedia) {
+    endpoint = 'https://api.tweetapi.com/tw-v2/interaction/create-post-with-media';
+    body.media = [{ url: 'https://shieldedsol.com/api/og' }];
+  }
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      authToken: authToken,
-      text: text,
-      proxy: process.env.TWEET_PROXY || ''
-    })
+    body: JSON.stringify(body)
   });
 
   if (!response.ok) {
@@ -119,9 +162,10 @@ export default async function handler(req, res) {
 
     const tweetText = `Solana Privacy Pools TVL: ${tvlFormatted}${change ? ` (${change} 24h)` : ''}
 
-Track privacy protocols live at shieldedsol.com`;
+Track live at shieldedsol.com`;
 
-    const result = await postTweet(tweetText);
+    // Post tweet with OG image
+    const result = await postTweet(tweetText, true);
 
     console.log('Tweet posted successfully:', result);
     return res.status(200).json({
