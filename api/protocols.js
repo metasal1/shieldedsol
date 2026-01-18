@@ -95,10 +95,10 @@ export default async function handler(req, res) {
     console.error('Radr balances fetch error:', e);
   }
 
-  // Privacy Cash pool address and token mints
-  const privacyCashAddress = '2vV7xhCMWRrcLiwGoTaTRgvx98ku98TRJKPXhsS8jvBV';
+  // Privacy Cash pool addresses
+  const privacyCashSolAddress = '4AV2Qzp3N4c9RfzyEbNZs2wqWfW4EwKnnxFAZCndvfGh';
+  const privacyCashTokenAddress = '2vV7xhCMWRrcLiwGoTaTRgvx98ku98TRJKPXhsS8jvBV';
   const privacyCashMints = {
-    SOL: 'So11111111111111111111111111111111111111112',
     USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     USDT: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
     ORE: 'oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp'
@@ -107,23 +107,23 @@ export default async function handler(req, res) {
   // Fetch Privacy Cash balances
   const privacyCashBalances = { SOL: 0, USDC: 0, USDT: 0, ORE: 0 };
   try {
-    // Fetch native SOL balance
+    // Fetch native SOL balance from SOL pool address
     const solRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ method: 'getBalance', jsonrpc: '2.0', params: [privacyCashAddress], id: '1' })
+      body: JSON.stringify({ method: 'getBalance', jsonrpc: '2.0', params: [privacyCashSolAddress], id: '1' })
     });
     const solData = await solRes.json();
     privacyCashBalances.SOL = (solData?.result?.value || 0) / 1e9;
 
-    // Fetch all token accounts owned by Privacy Cash
+    // Fetch all token accounts from token pool address
     const tokenRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         method: 'getTokenAccountsByOwner',
         jsonrpc: '2.0',
-        params: [privacyCashAddress, { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' }, { encoding: 'jsonParsed' }],
+        params: [privacyCashTokenAddress, { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' }, { encoding: 'jsonParsed' }],
         id: '1'
       })
     });
@@ -162,25 +162,25 @@ export default async function handler(req, res) {
       pools: [
         {
           asset: 'SOL',
-          address: privacyCashAddress,
+          address: privacyCashSolAddress,
           balance: privacyCashBalances.SOL,
           usd: privacyCashBalances.SOL * solPrice
         },
         {
           asset: 'USDC',
-          address: privacyCashAddress,
+          address: privacyCashTokenAddress,
           balance: privacyCashBalances.USDC,
           usd: privacyCashBalances.USDC
         },
         {
           asset: 'USDT',
-          address: privacyCashAddress,
+          address: privacyCashTokenAddress,
           balance: privacyCashBalances.USDT,
           usd: privacyCashBalances.USDT
         },
         {
           asset: 'ORE',
-          address: privacyCashAddress,
+          address: privacyCashTokenAddress,
           balance: privacyCashBalances.ORE,
           usd: privacyCashBalances.ORE * orePrice
         }
