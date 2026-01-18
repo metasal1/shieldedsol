@@ -3,19 +3,32 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  // Token mints for price fetching
+  const mints = {
+    SOL: 'So11111111111111111111111111111111111111112',
+    BONK: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+    ORE: 'oreoU2P8bN6jkk3jbaiVxYnG1dCXcYxwhwyK9jSybcp',
+    RADR: 'CzFvsLdUazabdiu9TYXujj4EY495fG7VgJJ3vQs6bonk'
+  };
+
   let solPrice = 180;
   let bonkPrice = 0;
-
-  // Fetch SOL, BONK, and RADR prices in one call
+  let orePrice = 0;
   let radrPrice = 0;
+
+  // Fetch prices from Jupiter API
   try {
-    const priceRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana,bonk,radr&vs_currencies=usd');
+    const mintIds = Object.values(mints).join(',');
+    const priceRes = await fetch(`https://api.jup.ag/price/v3?ids=${mintIds}`, {
+      headers: { 'x-api-key': process.env.JUP_API_KEY || '64a543a0-30cf-440e-a9e4-7463a8523e7f' }
+    });
     const priceData = await priceRes.json();
-    solPrice = priceData?.solana?.usd || 180;
-    bonkPrice = priceData?.bonk?.usd || 0;
-    radrPrice = priceData?.radr?.usd || 0;
+    solPrice = priceData?.[mints.SOL]?.usdPrice || 180;
+    bonkPrice = priceData?.[mints.BONK]?.usdPrice || 0;
+    orePrice = priceData?.[mints.ORE]?.usdPrice || 0;
+    radrPrice = priceData?.[mints.RADR]?.usdPrice || 0;
   } catch (e) {
-    console.error('Price fetch error:', e);
+    console.error('Jupiter price fetch error:', e);
   }
 
   // Fetch Turbine ZSOL supply
@@ -146,16 +159,6 @@ export default async function handler(req, res) {
     });
   } catch (e) {
     console.error('Privacy Cash fetch error:', e);
-  }
-
-  // Fetch ORE price
-  let orePrice = 0;
-  try {
-    const oreRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ore&vs_currencies=usd');
-    const oreData = await oreRes.json();
-    orePrice = oreData?.ore?.usd || 0;
-  } catch (e) {
-    console.error('ORE price fetch error:', e);
   }
 
   const protocols = [
