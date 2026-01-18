@@ -110,6 +110,54 @@ export default async function handler(req, res) {
     console.error('Radr balances fetch error:', e);
   }
 
+  // Elusiv pool address
+  const elusivPoolAddress = 'HszJz1zLnYpK5e8TvsRDPSDrxc19qFuhWrFQG6xY2aMX';
+  const elusivMints = {
+    USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    USDT: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+    BONK: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'
+  };
+
+  // Fetch Elusiv balances
+  const elusivBalances = { SOL: 0, USDC: 0, USDT: 0, BONK: 0 };
+  try {
+    // Fetch native SOL balance
+    const solRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'getBalance', jsonrpc: '2.0', params: [elusivPoolAddress], id: '1' })
+    });
+    const solData = await solRes.json();
+    elusivBalances.SOL = (solData?.result?.value || 0) / 1e9;
+
+    // Fetch all token accounts
+    const tokenRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        method: 'getTokenAccountsByOwner',
+        jsonrpc: '2.0',
+        params: [elusivPoolAddress, { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' }, { encoding: 'jsonParsed' }],
+        id: '1'
+      })
+    });
+    const tokenData = await tokenRes.json();
+    const accounts = tokenData?.result?.value || [];
+
+    // Map balances by mint
+    accounts.forEach(acc => {
+      const info = acc?.account?.data?.parsed?.info;
+      const mint = info?.mint;
+      const balance = parseFloat(info?.tokenAmount?.uiAmountString || '0');
+
+      if (mint === elusivMints.USDC) elusivBalances.USDC = balance;
+      else if (mint === elusivMints.USDT) elusivBalances.USDT = balance;
+      else if (mint === elusivMints.BONK) elusivBalances.BONK = balance;
+    });
+  } catch (e) {
+    console.error('Elusiv fetch error:', e);
+  }
+
   // Privacy Cash pool addresses
   const privacyCashSolAddress = '4AV2Qzp3N4c9RfzyEbNZs2wqWfW4EwKnnxFAZCndvfGh';
   const privacyCashTokenAddress = '2vV7xhCMWRrcLiwGoTaTRgvx98ku98TRJKPXhsS8jvBV';
@@ -266,18 +314,36 @@ export default async function handler(req, res) {
       tvl: turbineZsol * solPrice
     },
     {
-      name: 'Arcium',
-      status: 'live',
-      url: 'https://arcium.com',
-      pools: [],
-      tvl: 0
-    },
-    {
       name: 'Elusiv',
       status: 'sunset',
       url: 'https://elusiv.io',
-      pools: [],
-      tvl: 0
+      pools: [
+        {
+          asset: 'SOL',
+          address: elusivPoolAddress,
+          balance: elusivBalances.SOL,
+          usd: elusivBalances.SOL * solPrice
+        },
+        {
+          asset: 'USDC',
+          address: elusivPoolAddress,
+          balance: elusivBalances.USDC,
+          usd: elusivBalances.USDC
+        },
+        {
+          asset: 'USDT',
+          address: elusivPoolAddress,
+          balance: elusivBalances.USDT,
+          usd: elusivBalances.USDT
+        },
+        {
+          asset: 'BONK',
+          address: elusivPoolAddress,
+          balance: elusivBalances.BONK,
+          usd: elusivBalances.BONK * bonkPrice
+        }
+      ],
+      tvl: (elusivBalances.SOL * solPrice) + elusivBalances.USDC + elusivBalances.USDT + (elusivBalances.BONK * bonkPrice)
     }
   ];
 

@@ -91,6 +91,7 @@
             margin-bottom: 0.5rem;
         }
         .protocol-name { font-size: 0.875rem; font-weight: 500; }
+        .protocol-tvl { color: var(--text3); font-size: 0.75rem; font-weight: 400; margin-left: 0.5rem; }
         .protocol-status {
             font-size: 0.5rem;
             text-transform: uppercase;
@@ -452,21 +453,16 @@
                 pools: ['ZSOL']
             },
             {
-                name: 'Arcium',
-                status: 'live',
-                url: 'https://arcium.com',
-                pools: []
-            },
-            {
                 name: 'Elusiv',
                 status: 'sunset',
                 url: 'https://elusiv.io',
-                pools: []
+                pools: ['SOL', 'USDC', 'USDT', 'BONK']
             }
         ];
 
         let solPrice = 0;
         let poolData = {};
+        let protocolTvl = {};
         let chartHistory = [];
         let chartPeriod = 7;
         let alertsEnabled = localStorage.getItem('alerts') === 'true';
@@ -522,9 +518,12 @@
                     poolsHtml = '<div class="no-pools">No pools</div>';
                 }
 
+                const tvl = protocolTvl[p.name];
+                const tvlDisplay = tvl != null ? `<span class="protocol-tvl revealed">${fmtUsd(tvl)}</span>` : '';
+
                 return `<div class="protocol">
                     <div class="protocol-header">
-                        <span class="protocol-name">${p.name}</span>
+                        <span class="protocol-name">${p.name} ${tvlDisplay}</span>
                         <span class="protocol-status ${statusClass}">${statusText}</span>
                     </div>
                     ${poolsHtml}
@@ -569,6 +568,7 @@
 
                 // Build poolData from API response
                 apiData.protocols.forEach(protocol => {
+                    protocolTvl[protocol.name] = protocol.tvl;
                     if (protocol.pools.length > 0) {
                         poolData[protocol.name] = {};
                         protocol.pools.forEach(pool => {
