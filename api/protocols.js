@@ -6,12 +6,14 @@ export default async function handler(req, res) {
   let solPrice = 180;
   let bonkPrice = 0;
 
-  // Fetch SOL and BONK prices in one call
+  // Fetch SOL, BONK, and RADR prices in one call
+  let radrPrice = 0;
   try {
-    const priceRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana,bonk&vs_currencies=usd');
+    const priceRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana,bonk,radr&vs_currencies=usd');
     const priceData = await priceRes.json();
     solPrice = priceData?.solana?.usd || 180;
     bonkPrice = priceData?.bonk?.usd || 0;
+    radrPrice = priceData?.radr?.usd || 0;
   } catch (e) {
     console.error('Price fetch error:', e);
   }
@@ -222,10 +224,10 @@ export default async function handler(req, res) {
           asset: 'RADR',
           address: radrPools.RADR.address,
           balance: radrBalances.RADR || 0,
-          usd: 0 // RADR price not available
+          usd: (radrBalances.RADR || 0) * radrPrice
         }
       ],
-      tvl: ((radrBalances.SOL || 0) * solPrice) + (radrBalances.USDC || 0) + (radrBalances.USD1 || 0) + ((radrBalances.BONK || 0) * bonkPrice)
+      tvl: ((radrBalances.SOL || 0) * solPrice) + (radrBalances.USDC || 0) + (radrBalances.USD1 || 0) + ((radrBalances.BONK || 0) * bonkPrice) + ((radrBalances.RADR || 0) * radrPrice)
     },
     {
       name: 'Umbra',
@@ -284,6 +286,7 @@ export default async function handler(req, res) {
     solPrice,
     bonkPrice,
     orePrice,
+    radrPrice,
     totalTvl,
     protocols,
     updatedAt: new Date().toISOString()
