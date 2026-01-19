@@ -351,7 +351,7 @@
         <header>
             <div>
                 <h1><img src="/logo.svg" alt="Shielded Sol" class="logo">Shielded Sol</h1>
-                <p class="tagline">Solana Privacy Pools · <a href="https://x.com/shieldedsol" target="_blank" style="color: var(--text3); text-decoration: none;">@shieldedsol</a></p>
+                <p class="tagline">Solana Privacy Pools · <a href="https://x.com/shieldedsol" target="_blank" style="color: var(--text3); text-decoration: none;" onclick="trackClick('header', 'twitter')">@shieldedsol</a></p>
             </div>
             <div class="header-actions">
                 <button class="action-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle Theme">
@@ -413,9 +413,9 @@
             <button class="refresh" onclick="refresh()">refresh</button>
             <span id="updated"></span>
             <span style="float:right">
-                <a href="https://x.com/shieldedsol" target="_blank">@shieldedsol</a> ·
-                <a href="https://t.me/metasal" target="_blank">+ add protocol</a> ·
-                <a href="https://metasal.xyz" target="_blank">metasal.xyz</a>
+                <a href="https://x.com/shieldedsol" target="_blank" onclick="trackClick('footer', 'twitter')">@shieldedsol</a> ·
+                <a href="https://t.me/metasal" target="_blank" onclick="trackClick('footer', 'add-protocol')">+ add protocol</a> ·
+                <a href="https://metasal.xyz" target="_blank" onclick="trackClick('footer', 'metasal')">metasal.xyz</a>
             </span>
         </footer>
     </div>
@@ -457,6 +457,13 @@
                 status: 'sunset',
                 url: 'https://elusiv.io',
                 pools: ['SOL', 'USDC', 'USDT', 'BONK']
+            },
+            {
+                name: 'Vanish Trade',
+                status: 'live',
+                url: 'https://www.vanish.trade/@shielded',
+                linkText: 'vanish.trade',
+                pools: ['SOL']
             }
         ];
 
@@ -527,7 +534,7 @@
                         <span class="protocol-status ${statusClass}">${statusText}</span>
                     </div>
                     ${poolsHtml}
-                    <a href="${p.url}" target="_blank" class="protocol-link">${p.url.replace('https://', '')}</a>
+                    <a href="${p.url}" target="_blank" class="protocol-link" onclick="trackClick('protocol', '${p.name}')">${p.linkText || p.url.replace('https://', '')}</a>
                 </div>`;
             }).join('');
         }
@@ -671,6 +678,11 @@
             btn.classList.toggle('active', alertsEnabled);
         }
 
+        // Vercel Analytics custom event tracking
+        function trackClick(category, label) {
+            window.va?.track(category, { label });
+        }
+
         function getShareText() {
             const tvl = document.getElementById('tvl').textContent;
             const change = document.getElementById('tvl-change').textContent;
@@ -678,16 +690,19 @@
         }
 
         function shareTwitter() {
+            trackClick('share', 'twitter');
             const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}`;
             window.open(url, '_blank', 'width=550,height=420');
         }
 
         function shareTelegram() {
+            trackClick('share', 'telegram');
             const url = `https://t.me/share/url?url=${encodeURIComponent('https://shieldedsol.com')}&text=${encodeURIComponent(getShareText())}`;
             window.open(url, '_blank', 'width=550,height=420');
         }
 
         function shareDiscord() {
+            trackClick('share', 'discord');
             navigator.clipboard.writeText(getShareText() + '\nhttps://shieldedsol.com');
             const btn = document.getElementById('discord-btn');
             btn.classList.add('active');
@@ -695,6 +710,7 @@
         }
 
         async function copyStats() {
+            trackClick('share', 'copy');
             const tvl = document.getElementById('tvl').textContent;
             const change = document.getElementById('tvl-change').textContent;
             const text = `Solana Privacy Pools\nTVL: ${tvl} ${change}\n\nshieldedsol.com`;

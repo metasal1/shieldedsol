@@ -110,6 +110,23 @@ export default async function handler(req, res) {
     console.error('Radr balances fetch error:', e);
   }
 
+  // Vanish Trade pool address
+  const vanishPoolAddress = '8MjKXQgj97NPVNhj9gJrQNP7BibGCGkFMVJ2qZsC58E';
+
+  // Fetch Vanish Trade SOL balance
+  let vanishSol = 0;
+  try {
+    const vanishRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'getBalance', jsonrpc: '2.0', params: [vanishPoolAddress], id: '1' })
+    });
+    const vanishData = await vanishRes.json();
+    vanishSol = (vanishData?.result?.value || 0) / 1e9;
+  } catch (e) {
+    console.error('Vanish Trade fetch error:', e);
+  }
+
   // Elusiv pool address
   const elusivPoolAddress = 'HszJz1zLnYpK5e8TvsRDPSDrxc19qFuhWrFQG6xY2aMX';
   const elusivMints = {
@@ -344,6 +361,20 @@ export default async function handler(req, res) {
         }
       ],
       tvl: (elusivBalances.SOL * solPrice) + elusivBalances.USDC + elusivBalances.USDT + (elusivBalances.BONK * bonkPrice)
+    },
+    {
+      name: 'Vanish Trade',
+      status: 'live',
+      url: 'https://www.vanish.trade/@shielded',
+      pools: [
+        {
+          asset: 'SOL',
+          address: vanishPoolAddress,
+          balance: vanishSol,
+          usd: vanishSol * solPrice
+        }
+      ],
+      tvl: vanishSol * solPrice
     }
   ];
 
