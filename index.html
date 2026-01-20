@@ -762,7 +762,7 @@
 
         function shareWhatsApp() {
             trackClick('share', 'whatsapp');
-            const url = `https://wa.me/?text=${encodeURIComponent(getShareText() + '\nhttps://shieldedsol.com')}`;
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(getShareText() + '\nhttps://shieldedsol.com')}`;
             window.open(url, '_blank', 'width=550,height=420');
         }
 
