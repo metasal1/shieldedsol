@@ -59,7 +59,7 @@ vercel dev
 ## Environment Variables
 
 ```
-HELIUS_API_KEY=your_helius_api_key
+NEXT_PUBLIC_SOLANA_RPC_URL=https://your-rpc-endpoint.com
 ```
 
 ## Deploy

@@ -2,6 +2,8 @@ export const config = {
   maxDuration: 30,
 };
 
+const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+
 export default async function handler(req, res) {
   // Token mints for price fetching
   const mints = {
@@ -34,7 +36,7 @@ export default async function handler(req, res) {
   // Fetch Turbine ZSOL supply
   let turbineZsol = 0;
   try {
-    const turbineRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+    const turbineRes = await fetch(RPC_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -66,7 +68,7 @@ export default async function handler(req, res) {
       try {
         if (asset === 'SOL') {
           // SOL pool holds native SOL
-          const res = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+          const res = await fetch(RPC_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ method: 'getBalance', jsonrpc: '2.0', params: [address], id: '1' })
@@ -75,7 +77,7 @@ export default async function handler(req, res) {
           return { asset, balance: (data?.result?.value || 0) / 1e9 };
         } else if (asset === 'BONK') {
           // BONK is a standard token account
-          const res = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+          const res = await fetch(RPC_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ method: 'getTokenAccountBalance', jsonrpc: '2.0', params: [address], id: '1' })
@@ -84,7 +86,7 @@ export default async function handler(req, res) {
           return { asset, balance: data?.result?.value?.uiAmount || 0 };
         } else {
           // Other pools own token accounts - use getTokenAccountsByOwner
-          const res = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+          const res = await fetch(RPC_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -116,7 +118,7 @@ export default async function handler(req, res) {
   // Fetch Vanish Trade SOL balance
   let vanishSol = 0;
   try {
-    const vanishRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+    const vanishRes = await fetch(RPC_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ method: 'getBalance', jsonrpc: '2.0', params: [vanishPoolAddress], id: '1' })
@@ -139,7 +141,7 @@ export default async function handler(req, res) {
   const elusivBalances = { SOL: 0, USDC: 0, USDT: 0, BONK: 0 };
   try {
     // Fetch native SOL balance
-    const solRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+    const solRes = await fetch(RPC_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ method: 'getBalance', jsonrpc: '2.0', params: [elusivPoolAddress], id: '1' })
@@ -148,7 +150,7 @@ export default async function handler(req, res) {
     elusivBalances.SOL = (solData?.result?.value || 0) / 1e9;
 
     // Fetch all token accounts
-    const tokenRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+    const tokenRes = await fetch(RPC_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -189,7 +191,7 @@ export default async function handler(req, res) {
   const privacyCashBalances = { SOL: 0, USDC: 0, USDT: 0, ORE: 0, stORE: 0 };
   try {
     // Fetch native SOL balance from SOL pool address
-    const solRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+    const solRes = await fetch(RPC_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ method: 'getBalance', jsonrpc: '2.0', params: [privacyCashSolAddress], id: '1' })
@@ -198,7 +200,7 @@ export default async function handler(req, res) {
     privacyCashBalances.SOL = (solData?.result?.value || 0) / 1e9;
 
     // Fetch all token accounts from token pool address
-    const tokenRes = await fetch('https://cassandra-bq5oqs-fast-mainnet.helius-rpc.com/', {
+    const tokenRes = await fetch(RPC_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
