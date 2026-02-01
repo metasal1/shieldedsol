@@ -321,11 +321,28 @@
         @media (max-width: 600px) {
             body { padding: 1rem; }
             h1 { font-size: 1rem; }
+            .logo { width: 24px; height: 24px; }
+            .tagline { font-size: 0.625rem; }
             .total-value { font-size: 1.5rem; }
             .pool {
                 flex: 1 1 calc(50% - 0.25rem);
                 min-width: calc(50% - 0.25rem);
                 max-width: calc(50% - 0.25rem);
+            }
+            .header-actions { gap: 0.125rem; }
+            .action-btn {
+                width: 28px;
+                height: 28px;
+            }
+            .action-btn svg {
+                width: 12px;
+                height: 12px;
+            }
+            /* Hide less common share buttons on mobile */
+            #slack-btn,
+            #facebook-btn,
+            #linkedin-btn {
+                display: none;
             }
         }
         /* iOS Install Banner */
