@@ -15,6 +15,7 @@ Add these to your `.env` file:
 ```env
 TURSO_DATABASE_URL=libsql://shieldedsol-metasal1.aws-ap-northeast-1.turso.io
 TURSO_AUTH_TOKEN=your-read-write-token
+CRON_SECRET=your-secret-key-for-cron-authentication
 ```
 
 ## Database Schema
@@ -53,18 +54,40 @@ npm run db:init
 
 # Check database statistics and latest data
 npm run db:check
+
+# Clear all data from database (use with caution)
+npm run db:clear
+
+# Test the daily collection cron endpoint
+npm run cron:test
 ```
 
 ## API Integration
 
 ### Data Collection
 
-The `/api/protocols` endpoint automatically saves data to Turso on each request:
+#### Live Data (User-Facing)
+The `/api/protocols` endpoint returns live data fetched from the blockchain on each request. This ensures users always see current TVL values.
+
+#### Historical Data (Cron Job)
+A Vercel Cron job runs daily at midnight UTC (`/api/cron/collect-daily`) to save historical snapshots:
 - Token prices (SOL, BONK, ORE, RADR)
 - TVL snapshots for all protocols
 - Pool balances for each asset
 
-Data is saved asynchronously without blocking the API response.
+**Configuration in `vercel.json`:**
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/collect-daily",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
+```
+
+**Security:** The cron endpoint requires a `CRON_SECRET` in the Authorization header to prevent unauthorized access.
 
 ### History APIs
 

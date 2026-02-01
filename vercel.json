@@ -3,6 +3,10 @@
     {
       "path": "/api/tweet",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/collect-daily",
+      "schedule": "0 0 * * *"
     }
   ],
   "headers": [

@@ -6,7 +6,8 @@
   "scripts": {
     "db:init": "node db/init.js",
     "db:check": "node db/check.js",
-    "db:clear": "node db/clear.js"
+    "db:clear": "node db/clear.js",
+    "cron:test": "./test-cron.sh"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
