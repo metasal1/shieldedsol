@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TVL History - Shielded Sol</title>
+    <meta name="description" content="Historical TVL data and analytics for Solana privacy protocols">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #000; --bg2: #0a0a0a; --bg3: #111;
+            --border: #222; --border2: #111;
+            --text: #fff; --text2: #888; --text3: #666; --text4: #444;
+            --accent: #9945FF;
+        }
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 { font-size: 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+        .logo { width: 32px; height: 32px; }
+        .back-link {
+            color: var(--text3);
+            text-decoration: none;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .back-link:hover { color: var(--text); }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .stat-label { color: var(--text3); font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 1.5rem; font-weight: 600; color: var(--accent); }
+        .stat-change { font-size: 0.75rem; margin-top: 0.25rem; }
+        .stat-change.up { color: #22c55e; }
+        .stat-change.down { color: #ef4444; }
+        .section { margin-bottom: 2rem; }
+        .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text2); }
+        .chart-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .chart-title { font-size: 0.875rem; font-weight: 500; }
+        .chart-tabs { display: flex; gap: 0.5rem; }
+        .chart-tab {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text4);
+            font-size: 0.625rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .chart-tab:hover { border-color: var(--text4); color: var(--text3); }
+        .chart-tab.active { border-color: var(--accent); color: var(--accent); }
+        .chart-container { display: flex; align-items: flex-end; gap: 3px; height: 150px; margin-bottom: 1rem; }
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(180deg, var(--accent) 0%, rgba(153, 69, 255, 0.3) 100%);
+            min-width: 4px;
+            border-radius: 2px 2px 0 0;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .chart-bar:hover {
+            background: var(--accent);
+            transform: scaleY(1.05);
+        }
+        .chart-labels { display: flex; justify-content: space-between; }
+        .chart-label { color: var(--text4); font-size: 0.625rem; }
+        .protocol-list { display: grid; gap: 1rem; }
+        .protocol-item {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .protocol-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .protocol-name { font-weight: 500; }
+        .protocol-tvl { color: var(--text3); font-size: 0.875rem; }
+        .protocol-mini-chart { display: flex; align-items: flex-end; gap: 2px; height: 30px; margin-top: 0.5rem; }
+        .mini-bar { flex: 1; background: #9945FF40; min-width: 2px; border-radius: 1px 1px 0 0; }
+        footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            color: var(--text4);
+            font-size: 0.625rem;
+            text-align: center;
+        }
+        .loading { opacity: 0.5; animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+        @media (max-width: 600px) {
+            body { padding: 1rem; }
+            h1 { font-size: 1.25rem; }
+            .logo { width: 24px; height: 24px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .stat-value { font-size: 1.25rem; }
+            .chart-container { height: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><img src="/logo.svg" alt="Shielded Sol" class="logo">TVL History</h1>
+            <a href="/" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Back to Dashboard
+            </a>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Current TVL</div>
+                <div class="stat-value loading" id="current-tvl">$--</div>
+                <div class="stat-change" id="tvl-change"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">7-Day Average</div>
+                <div class="stat-value loading" id="avg-7d">$--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">30-Day Average</div>
+                <div class="stat-value loading" id="avg-30d">$--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">All-Time High</div>
+                <div class="stat-value loading" id="ath">$--</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Total Value Locked</div>
+                    <div class="chart-tabs">
+                        <button class="chart-tab" onclick="setMainPeriod('24h')">24H</button>
+                        <button class="chart-tab active" onclick="setMainPeriod('7d')">7D</button>
+                        <button class="chart-tab" onclick="setMainPeriod('30d')">30D</button>
+                        <button class="chart-tab" onclick="setMainPeriod('90d')">90D</button>
+                    </div>
+                </div>
+                <div class="chart-container" id="main-chart"></div>
+                <div class="chart-labels">
+                    <span class="chart-label" id="main-start">--</span>
+                    <span class="chart-label" id="main-end">--</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Protocol Breakdown</div>
+            <div class="protocol-list" id="protocol-list"></div>
+        </div>
+
+        <footer>
+            Last updated: <span id="updated">--</span> ·
+            <a href="https://x.com/shieldedsol" target="_blank" style="color: var(--text3);">@shieldedsol</a>
+        </footer>
+    </div>
+
+    <script>
+        let mainPeriod = '7d';
+        let mainHistory = [];
+        let protocols = [];
+
+        function fmt(n, d = 2) {
+            if (n == null || isNaN(n)) return '--';
+            if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+            if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+            return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+        }
+
+        function fmtUsd(n) {
+            if (n == null || isNaN(n)) return '--';
+            return '$' + fmt(n);
+        }
+
+        async function fetchMainChart() {
+            try {
+                const res = await fetch(`/api/history/tvl?range=${mainPeriod}`);
+                const data = await res.json();
+                mainHistory = data.history || [];
+                renderMainChart();
+                calculateStats();
+            } catch (e) {
+                console.error('Main chart fetch error:', e);
+            }
+        }
+
+        function renderMainChart() {
+            const chart = document.getElementById('main-chart');
+            if (mainHistory.length === 0) {
+                chart.innerHTML = '<div style="color: var(--text4); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; height: 100%;">No data available yet. Run the cron job to start collecting data.</div>';
+                return;
+            }
+
+            const max = Math.max(...mainHistory.map(d => d.totalTvl));
+            chart.innerHTML = mainHistory.map((d, i) => {
+                const h = max > 0 ? (d.totalTvl / max) * 100 : 0;
+                return `<div class="chart-bar" style="height:${h}%" title="${fmtUsd(d.totalTvl)}"></div>`;
+            }).join('');
+
+            const startDate = new Date(mainHistory[0].timestamp);
+            const endDate = new Date(mainHistory[mainHistory.length - 1].timestamp);
+            document.getElementById('main-start').textContent = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            document.getElementById('main-end').textContent = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function calculateStats() {
+            if (mainHistory.length === 0) return;
+
+            const current = mainHistory[mainHistory.length - 1]?.totalTvl || 0;
+            document.getElementById('current-tvl').textContent = fmtUsd(current);
+            document.getElementById('current-tvl').classList.remove('loading');
+
+            // Calculate change
+            if (mainHistory.length >= 2) {
+                const previous = mainHistory[0]?.totalTvl || 0;
+                if (previous > 0) {
+                    const change = ((current - previous) / previous) * 100;
+                    const arrow = change >= 0 ? '↑' : '↓';
+                    const changeEl = document.getElementById('tvl-change');
+                    changeEl.textContent = `${arrow} ${Math.abs(change).toFixed(2)}% since ${mainPeriod}`;
+                    changeEl.className = 'stat-change ' + (change >= 0 ? 'up' : 'down');
+                }
+            }
+
+            // Calculate averages
+            const avg7d = mainHistory.slice(-7).reduce((sum, d) => sum + d.totalTvl, 0) / Math.min(7, mainHistory.length);
+            const avg30d = mainHistory.slice(-30).reduce((sum, d) => sum + d.totalTvl, 0) / Math.min(30, mainHistory.length);
+            const ath = Math.max(...mainHistory.map(d => d.totalTvl));
+
+            document.getElementById('avg-7d').textContent = fmtUsd(avg7d);
+            document.getElementById('avg-7d').classList.remove('loading');
+            document.getElementById('avg-30d').textContent = fmtUsd(avg30d);
+            document.getElementById('avg-30d').classList.remove('loading');
+            document.getElementById('ath').textContent = fmtUsd(ath);
+            document.getElementById('ath').classList.remove('loading');
+        }
+
+        async function fetchProtocols() {
+            try {
+                const res = await fetch('/api/protocols');
+                const data = await res.json();
+                protocols = data.protocols || [];
+                await renderProtocols();
+            } catch (e) {
+                console.error('Protocols fetch error:', e);
+            }
+        }
+
+        async function renderProtocols() {
+            const container = document.getElementById('protocol-list');
+
+            const items = await Promise.all(protocols.map(async (p) => {
+                const tvl = p.tvl || 0;
+
+                // Fetch mini chart data
+                let miniChartHtml = '';
+                try {
+                    const res = await fetch(`/api/history/protocol?protocol=${encodeURIComponent(p.name)}&range=7d`);
+                    const data = await res.json();
+                    const history = data.history || [];
+
+                    if (history.length > 0) {
+                        const max = Math.max(...history.map(d => d.tvl));
+                        miniChartHtml = '<div class="protocol-mini-chart">' +
+                            history.map(d => {
+                                const h = max > 0 ? (d.tvl / max) * 100 : 0;
+                                return `<div class="mini-bar" style="height:${h}%" title="${fmtUsd(d.tvl)}"></div>`;
+                            }).join('') +
+                        '</div>';
+                    }
+                } catch (e) {
+                    console.error(`Error fetching ${p.name} history:`, e);
+                }
+
+                return `<div class="protocol-item">
+                    <div class="protocol-header">
+                        <span class="protocol-name">${p.name}</span>
+                        <span class="protocol-tvl">${fmtUsd(tvl)}</span>
+                    </div>
+                    ${miniChartHtml}
+                </div>`;
+            }));
+
+            container.innerHTML = items.join('');
+        }
+
+        function setMainPeriod(period) {
+            mainPeriod = period;
+            document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            fetchMainChart();
+        }
+
+        async function init() {
+            await fetchMainChart();
+            await fetchProtocols();
+            document.getElementById('updated').textContent = new Date().toLocaleTimeString();
+        }
+
+        init();
+        setInterval(init, 5 * 60 * 1000); // Refresh every 5 minutes
+    </script>
+</body>
+</html>

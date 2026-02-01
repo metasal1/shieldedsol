@@ -299,6 +299,35 @@
         .chart-bar:hover { background: var(--accent); }
         .chart-labels { display: flex; justify-content: space-between; margin-top: 0.25rem; }
         .chart-label { color: var(--text4); font-size: 0.5rem; }
+        .protocol-chart-toggle {
+            background: none;
+            border: none;
+            color: var(--text4);
+            font-size: 0.625rem;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 0.25rem 0;
+            margin-top: 0.25rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .protocol-chart-toggle:hover { color: var(--text2); }
+        .protocol-chart-toggle svg { width: 10px; height: 10px; transition: transform 0.2s; }
+        .protocol-chart-toggle.open svg { transform: rotate(180deg); }
+        .protocol-chart {
+            margin-top: 0.5rem;
+            display: none;
+            overflow: hidden;
+        }
+        .protocol-chart.open { display: block; animation: slideDown 0.3s ease; }
+        @keyframes slideDown {
+            from { opacity: 0; max-height: 0; }
+            to { opacity: 1; max-height: 100px; }
+        }
+        .protocol-chart-container { display: flex; align-items: flex-end; gap: 2px; height: 40px; }
+        .protocol-chart-bar { flex: 1; background: #9945FF40; min-width: 2px; border-radius: 1px 1px 0 0; transition: background 0.2s; }
+        .protocol-chart-bar:hover { background: var(--accent); }
         footer {
             margin-top: 1.5rem;
             padding-top: 1rem;
@@ -459,6 +488,7 @@
             <button class="refresh" onclick="refresh()">refresh</button>
             <span id="updated"></span>
             <span style="float:right">
+                <a href="/history.html" onclick="trackClick('footer', 'history')">history</a> ·
                 <a href="https://x.com/shieldedsol" target="_blank" onclick="trackClick('footer', 'twitter')">@shieldedsol</a> ·
                 <a href="https://t.me/metasal" target="_blank" onclick="trackClick('footer', 'add-protocol')">+ add protocol</a> ·
                 <a href="https://metasal.xyz" target="_blank" onclick="trackClick('footer', 'metasal')">metasal.xyz</a>
@@ -580,6 +610,13 @@
                         <span class="protocol-status ${statusClass}">${statusText}</span>
                     </div>
                     ${poolsHtml}
+                    <button class="protocol-chart-toggle" onclick="toggleProtocolChart('${p.name}', event)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                        View history
+                    </button>
+                    <div class="protocol-chart" id="chart-${p.name.replace(/\s+/g, '-')}">
+                        <div class="protocol-chart-container" id="chart-container-${p.name.replace(/\s+/g, '-')}"></div>
+                    </div>
                     <a href="${p.url}" target="_blank" class="protocol-link" onclick="trackClick('protocol', '${p.name}')">${p.linkText || p.url.replace('https://', '')}</a>
                 </div>`;
             }).join('');
@@ -587,27 +624,40 @@
 
         function renderChart() {
             const chart = document.getElementById('chart');
-            const data = chartHistory.slice(-chartPeriod);
-            if (data.length === 0) return;
+            if (chartHistory.length === 0) return;
 
-            const max = Math.max(...data.map(d => d.totalLiquidityUSD));
-            chart.innerHTML = data.map((d, i) => {
-                const h = max > 0 ? (d.totalLiquidityUSD / max) * 100 : 0;
+            const max = Math.max(...chartHistory.map(d => d.totalTvl));
+            chart.innerHTML = chartHistory.map((d, i) => {
+                const h = max > 0 ? (d.totalTvl / max) * 100 : 0;
                 const delay = i * 0.03;
-                return `<div class="chart-bar revealed" style="height:${h}%; animation-delay:${delay}s" title="${fmtUsd(d.totalLiquidityUSD)}"></div>`;
+                return `<div class="chart-bar revealed" style="height:${h}%; animation-delay:${delay}s" title="${fmtUsd(d.totalTvl)}"></div>`;
             }).join('');
 
-            const startDate = new Date(data[0].date * 1000);
-            const endDate = new Date(data[data.length - 1].date * 1000);
+            const startDate = new Date(chartHistory[0].timestamp);
+            const endDate = new Date(chartHistory[chartHistory.length - 1].timestamp);
             document.getElementById('chart-start').textContent = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             document.getElementById('chart-end').textContent = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
-        function setChartPeriod(days) {
+        async function setChartPeriod(days) {
             chartPeriod = days;
             document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
+            await fetchChartData();
             renderChart();
+        }
+
+        async function fetchChartData() {
+            try {
+                const rangeMap = { 7: '7d', 30: '30d', 90: '90d' };
+                const range = rangeMap[chartPeriod] || '7d';
+                const res = await fetch(`/api/history/tvl?range=${range}`);
+                const data = await res.json();
+                chartHistory = data.history || [];
+            } catch (e) {
+                console.error('Chart data fetch error:', e);
+                chartHistory = [];
+            }
         }
 
         async function fetchData() {
@@ -640,28 +690,22 @@
                 tvlEl.textContent = fmtUsd(tvl);
                 checkTvlAlert(tvl);
 
-                // Fetch historical data for chart from DeFiLlama
-                try {
-                    const tvlRes = await fetch('https://api.llama.fi/protocol/privacy-cash');
-                    const tvlData = await tvlRes.json();
-                    chartHistory = tvlData?.chainTvls?.Solana?.tvl || tvlData?.tvl || [];
+                // Fetch historical data from our Turso database
+                await fetchChartData();
 
-                    // Calculate 24h change
-                    if (chartHistory.length >= 2) {
-                        const current = chartHistory[chartHistory.length - 1]?.totalLiquidityUSD || 0;
-                        const yesterday = chartHistory[chartHistory.length - 2]?.totalLiquidityUSD || 0;
-                        if (yesterday > 0) {
-                            const change = ((current - yesterday) / yesterday) * 100;
-                            const changeEl = document.getElementById('tvl-change');
-                            const arrow = change >= 0 ? '↑' : '↓';
-                            changeEl.textContent = `${arrow} ${Math.abs(change).toFixed(2)}% (24h)`;
-                            changeEl.className = 'tvl-change ' + (change >= 0 ? 'up' : 'down');
-                        }
+                // Calculate 24h change from our data
+                if (chartHistory.length >= 2) {
+                    const current = tvl;
+                    const yesterday = chartHistory[chartHistory.length - 2]?.totalTvl || 0;
+                    if (yesterday > 0) {
+                        const change = ((current - yesterday) / yesterday) * 100;
+                        const changeEl = document.getElementById('tvl-change');
+                        const arrow = change >= 0 ? '↑' : '↓';
+                        changeEl.textContent = `${arrow} ${Math.abs(change).toFixed(2)}% (24h)`;
+                        changeEl.className = 'tvl-change ' + (change >= 0 ? 'up' : 'down');
                     }
-                    renderChart();
-                } catch (e) {
-                    console.error('Chart data fetch error:', e);
                 }
+                renderChart();
 
                 checkDailyNotification(tvl);
                 render();
@@ -855,6 +899,60 @@
 
         // Show iOS install prompt after a short delay
         setTimeout(showIOSInstallPrompt, 2000);
+
+        // Protocol-specific chart toggle
+        let protocolCharts = {};
+
+        async function toggleProtocolChart(protocolName, event) {
+            event.preventDefault();
+            const chartId = `chart-${protocolName.replace(/\s+/g, '-')}`;
+            const chartEl = document.getElementById(chartId);
+            const toggleBtn = event.currentTarget;
+            const isOpen = chartEl.classList.contains('open');
+
+            if (isOpen) {
+                chartEl.classList.remove('open');
+                toggleBtn.classList.remove('open');
+                toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg> View history';
+            } else {
+                // Fetch and render protocol chart
+                await fetchProtocolChart(protocolName);
+                chartEl.classList.add('open');
+                toggleBtn.classList.add('open');
+                toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg> Hide history';
+            }
+
+            trackClick('protocol-chart', protocolName);
+        }
+
+        async function fetchProtocolChart(protocolName) {
+            try {
+                const res = await fetch(`/api/history/protocol?protocol=${encodeURIComponent(protocolName)}&range=7d`);
+                const data = await res.json();
+                protocolCharts[protocolName] = data.history || [];
+                renderProtocolChart(protocolName);
+            } catch (e) {
+                console.error('Protocol chart fetch error:', e);
+            }
+        }
+
+        function renderProtocolChart(protocolName) {
+            const containerId = `chart-container-${protocolName.replace(/\s+/g, '-')}`;
+            const container = document.getElementById(containerId);
+            const data = protocolCharts[protocolName] || [];
+
+            if (data.length === 0) {
+                container.innerHTML = '<div style="color: var(--text5); font-size: 0.625rem; padding: 0.5rem 0;">No historical data yet</div>';
+                return;
+            }
+
+            const max = Math.max(...data.map(d => d.tvl));
+            container.innerHTML = data.map((d, i) => {
+                const h = max > 0 ? (d.tvl / max) * 100 : 0;
+                const delay = i * 0.02;
+                return `<div class="protocol-chart-bar revealed" style="height:${h}%; animation-delay:${delay}s" title="${fmtUsd(d.tvl)}"></div>`;
+            }).join('');
+        }
     </script>
 </body>
 </html>
