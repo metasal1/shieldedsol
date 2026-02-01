@@ -1,3 +1,5 @@
+import { saveTvlSnapshot, savePoolBalance, saveTokenPrice } from '../db/client.js';
+
 export const config = {
   maxDuration: 30,
 };
@@ -381,6 +383,47 @@ export default async function handler(req, res) {
   ];
 
   const totalTvl = protocols.reduce((sum, p) => sum + p.tvl, 0);
+
+  // Save data to Turso (async, don't wait)
+  const timestamp = new Date().toISOString();
+  try {
+    // Save token prices
+    const pricePromises = [
+      saveTokenPrice(timestamp, 'SOL', solPrice),
+      saveTokenPrice(timestamp, 'BONK', bonkPrice),
+      saveTokenPrice(timestamp, 'ORE', orePrice),
+      saveTokenPrice(timestamp, 'RADR', radrPrice)
+    ];
+
+    // Save TVL snapshots for each protocol
+    const tvlPromises = protocols.map(protocol =>
+      saveTvlSnapshot(timestamp, protocol.name, protocol.tvl)
+    );
+
+    // Save pool balances for each protocol
+    const poolPromises = [];
+    protocols.forEach(protocol => {
+      protocol.pools.forEach(pool => {
+        poolPromises.push(
+          savePoolBalance(
+            timestamp,
+            protocol.name,
+            pool.asset,
+            pool.address,
+            pool.balance,
+            pool.usd
+          )
+        );
+      });
+    });
+
+    // Execute all database writes in parallel without blocking the response
+    Promise.all([...pricePromises, ...tvlPromises, ...poolPromises]).catch(err => {
+      console.error('Error saving to Turso:', err);
+    });
+  } catch (err) {
+    console.error('Error preparing Turso data:', err);
+  }
 
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Cache-Control', 'public, max-age=60');
