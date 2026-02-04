@@ -266,7 +266,7 @@ export default async function handler(req, res) {
     {
       name: 'Radr Labs',
       status: 'live',
-      url: 'https://radrlabs.io',
+      url: 'https://radr.fun/?ref=1fdf4944d94c7ac9',
       pools: [
         {
           asset: 'SOL',
