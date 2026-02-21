@@ -130,8 +130,8 @@
         }
         .pool-asset { color: var(--text2); font-size: 0.75rem; }
         .pool-balance { text-align: right; }
-        .pool-amount { font-weight: 500; font-size: 0.875rem; }
-        .pool-usd { color: var(--text3); font-size: 0.625rem; }
+        .pool-amount { color: var(--text3); font-size: 0.625rem; }
+        .pool-usd { font-weight: 500; font-size: 0.875rem; }
         .loading {
             color: var(--text5);
             position: relative;
@@ -600,8 +600,8 @@
                         return `<div class="pool">
                             <span class="pool-asset">${asset}</span>
                             <div class="pool-balance">
-                                <div class="pool-amount">${amount}</div>
                                 <div class="pool-usd">${usd}</div>
+                                <div class="pool-amount">${amount}</div>
                             </div>
                         </div>`;
                     }).join('') + '</div>';
